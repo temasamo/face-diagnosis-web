@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Face Diagnosis AI Web App
 
-## Getting Started
+顔診断AIのWebアプリケーション - Before/After比較による肌状態の改善度を測定
 
-First, run the development server:
+## 📱 機能
+
+- カメラによる顔撮影
+- Before/After画像の比較
+- スライダーでの画像比較UI
+- レスポンシブデザイン
+
+## 🚀 セットアップ
+
+### 前提条件
+- Node.js (v18以上推奨)
+- npm または yarn
+
+### インストール
 
 ```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバー起動
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 実行
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 開発サーバー起動
+npm run dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# ビルド
+npm run build
 
-## Learn More
+# 本番サーバー起動
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📂 プロジェクト構成
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+face-diagnosis-web/
+├── src/
+│   ├── app/
+│   │   └── ai/
+│   │       └── face/
+│   │           └── page.tsx    # メインページ
+│   └── components/
+│       ├── FaceCamera.tsx      # カメラUI
+│       ├── BeforeAfterCompare.tsx # 画像比較UI
+│       └── ResultCard.tsx      # 診断結果UI
+├── package.json
+└── README.md
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠 技術スタック
 
-## Deploy on Vercel
+- **Next.js 15** - React フレームワーク
+- **React 18** - UI ライブラリ
+- **TypeScript** - 型安全性
+- **Tailwind CSS** - スタイリング
+- **Vercel** - デプロイメント
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🌐 デプロイ
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+このプロジェクトはVercelでデプロイされています：
+
+- **本番URL**: [https://face-diagnosis-web.vercel.app](https://face-diagnosis-web.vercel.app)
+- **顔診断AI**: [https://face-diagnosis-web.vercel.app/ai/face](https://face-diagnosis-web.vercel.app/ai/face)
+
+## 📝 ライセンス
+
+MIT License
