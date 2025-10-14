@@ -1,31 +1,19 @@
-// /pages/api/analyze.ts
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// レスポンス型定義
-type Data =
-  | { result: string; mode: string }
-  | { error: string };
-
-// メインAPIハンドラー
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
-  // POST以外は拒否
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed. Use POST." });
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    const { before, after, mode = "vision" } = req.body;
+    const { before, after, mode = "vision" } = await request.json();
 
     if (!before || !after) {
-      return res.status(400).json({ error: "Missing required images." });
+      return NextResponse.json(
+        { error: "Missing required images." },
+        { status: 400 }
+      );
     }
 
     // --- ① OpenAI Visionによる画像比較 ---
@@ -64,15 +52,21 @@ export default async function handler(
         completion.choices?.[0]?.message?.content ||
         "比較結果を取得できませんでした。";
 
-      return res.status(200).json({ mode, result });
+      return NextResponse.json({ mode, result });
     }
 
     // --- ② 数値分析モードは後で追加予定 ---
     else {
-      return res.status(501).json({ error: "Numeric mode not implemented yet." });
+      return NextResponse.json(
+        { error: "Numeric mode not implemented yet." },
+        { status: 501 }
+      );
     }
   } catch (error: any) {
     console.error("[analyze.ts error]", error);
-    return res.status(500).json({ error: "Failed to analyze images." });
+    return NextResponse.json(
+      { error: "Failed to analyze images." },
+      { status: 500 }
+    );
   }
 }
