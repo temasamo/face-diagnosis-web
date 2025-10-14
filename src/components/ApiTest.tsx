@@ -45,7 +45,7 @@ export default function ApiTest() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">API テスト</h2>
+      <h2 className="text-2xl font-bold mb-4 text-black">API テスト</h2>
       
       <button
         onClick={testApi}
