@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         { status: 501 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[analyze.ts error]", error);
     return NextResponse.json(
       { error: "Failed to analyze images." },

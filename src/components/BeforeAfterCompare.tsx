@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function BeforeAfterCompare({ before, after }: { before: string; after: string }) {
   const [slider, setSlider] = useState(50);
@@ -9,9 +10,11 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
     <div className="max-w-2xl mx-auto">
       <div className="relative bg-gray-100 rounded-lg overflow-hidden">
         {/* Before画像 - 背景として表示 */}
-        <img 
+        <Image 
           src={before} 
           alt="Before" 
+          width={800}
+          height={600}
           className="w-full h-auto block"
           style={{ aspectRatio: "4/3" }}
         />
@@ -21,9 +24,11 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
           className="absolute top-0 left-0 h-full overflow-hidden"
           style={{ width: `${slider}%` }}
         >
-          <img
+          <Image
             src={after}
             alt="After"
+            width={800}
+            height={600}
             className="w-full h-full object-contain"
             style={{ aspectRatio: "4/3" }}
           />
