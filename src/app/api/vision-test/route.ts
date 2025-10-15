@@ -43,21 +43,12 @@ export async function POST(req: NextRequest) {
     }));
 
     return NextResponse.json({ faces: response });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Vision API Error:", error);
-    
-    // 環境変数の確認
-    const hasCredentials = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
-    
-    return NextResponse.json(
-      { 
-        error: "Vision APIとの通信に失敗しました。", 
-        details: error instanceof Error ? error.message : "Unknown error",
-        hasCredentials: !!hasCredentials,
-        clientEmail: process.env.GOOGLE_CLIENT_EMAIL ? "設定済み" : "未設定",
-        privateKey: process.env.GOOGLE_PRIVATE_KEY ? "設定済み" : "未設定"
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: "Vision APIとの通信に失敗しました。",
+      details: error.message,
+      stack: error.stack,
+    }, { status: 500 });
   }
 }
