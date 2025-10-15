@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function VisionTest() {
   const [result, setResult] = useState<{
@@ -79,11 +80,12 @@ export default function VisionTest() {
       {imagePreview && (
         <div className="mt-4">
           <h3 className="font-bold mb-2">テスト画像:</h3>
-          <img 
+          <Image 
             src={imagePreview} 
             alt="Test" 
+            width={100}
+            height={100}
             className="border border-gray-300 rounded"
-            style={{ width: '100px', height: '100px' }}
           />
         </div>
       )}

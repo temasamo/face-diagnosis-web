@@ -7,7 +7,22 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
   const [opacity, setOpacity] = useState(0.5); // 半透明度コントロール
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
-  const [alignmentData, setAlignmentData] = useState<any>(null);
+  const [alignmentData, setAlignmentData] = useState<{
+    success: boolean;
+    beforeCenter: { x: number; y: number };
+    afterCenter: { x: number; y: number };
+    beforeSize: number;
+    afterSize: number;
+    scaleRatio: number;
+    beforeAngles: { roll: number; tilt: number; pan: number };
+    afterAngles: { roll: number; tilt: number; pan: number };
+    alignment: {
+      offsetX: number;
+      offsetY: number;
+      rotationDiff: number;
+      scale: number;
+    };
+  } | null>(null);
 
   // 顔位置自動補正関数
   const alignFaces = async () => {
@@ -29,8 +44,8 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
       setAlignmentData(alignData);
       
       // 2. CanvasでBefore画像を補正
-      const beforeImg = new Image();
-      const afterImg = new Image();
+      const beforeImg = new window.Image();
+      const afterImg = new window.Image();
       
       beforeImg.onload = () => {
         afterImg.onload = () => {
@@ -106,9 +121,11 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
       <div className="relative inline-block">
         {alignedBefore ? (
           // 補正済み画像を表示
-          <img
+          <Image
             src={alignedBefore}
             alt="Aligned Comparison"
+            width={800}
+            height={600}
             className="w-full h-auto rounded-lg shadow-lg border-2 border-purple-200"
             style={{ aspectRatio: "4/3" }}
           />

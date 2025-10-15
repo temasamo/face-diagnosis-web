@@ -29,10 +29,10 @@ export async function POST(req: Request) {
     }
 
     // 座標抽出関数
-    const getCenter = (f: any) => {
-      const left = f.landmarks?.find((l: any) => l.type === "LEFT_EYE")?.position;
-      const right = f.landmarks?.find((l: any) => l.type === "RIGHT_EYE")?.position;
-      const nose = f.landmarks?.find((l: any) => l.type === "NOSE_TIP")?.position;
+    const getCenter = (f: { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null }) => {
+      const left = f.landmarks?.find((l) => l.type === "LEFT_EYE")?.position;
+      const right = f.landmarks?.find((l) => l.type === "RIGHT_EYE")?.position;
+      const nose = f.landmarks?.find((l) => l.type === "NOSE_TIP")?.position;
 
       if (!left || !right || !nose) return null;
       const eyeCenter = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
@@ -40,20 +40,20 @@ export async function POST(req: Request) {
     };
 
     // 顔のサイズ計算（目から顎までの距離）
-    const getFaceSize = (f: any) => {
-      const left = f.landmarks?.find((l: any) => l.type === "LEFT_EYE")?.position;
-      const right = f.landmarks?.find((l: any) => l.type === "RIGHT_EYE")?.position;
-      const chin = f.landmarks?.find((l: any) => l.type === "CHIN_GNATHION")?.position;
+    const getFaceSize = (f: { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null }) => {
+      const left = f.landmarks?.find((l) => l.type === "LEFT_EYE")?.position;
+      const right = f.landmarks?.find((l) => l.type === "RIGHT_EYE")?.position;
+      const chin = f.landmarks?.find((l) => l.type === "CHIN_GNATHION")?.position;
       
       if (!left || !right || !chin) return null;
       const eyeCenter = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
       return Math.sqrt(Math.pow(chin.x - eyeCenter.x, 2) + Math.pow(chin.y - eyeCenter.y, 2));
     };
 
-    const beforeCenter = getCenter(beforeFace);
-    const afterCenter = getCenter(afterFace);
-    const beforeSize = getFaceSize(beforeFace);
-    const afterSize = getFaceSize(afterFace);
+    const beforeCenter = getCenter(beforeFace as { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null });
+    const afterCenter = getCenter(afterFace as { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null });
+    const beforeSize = getFaceSize(beforeFace as { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null });
+    const afterSize = getFaceSize(afterFace as { landmarks?: Array<{ type: string; position: { x: number; y: number } }> | null });
 
     if (!beforeCenter || !afterCenter || !beforeSize || !afterSize) {
       return NextResponse.json({ success: false, message: "顔のランドマークが不完全です。" });

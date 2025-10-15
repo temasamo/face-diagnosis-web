@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function ComparePage() {
   const [before, setBefore] = useState<string | null>(null);
@@ -9,7 +10,22 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(false);
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
-  const [alignmentData, setAlignmentData] = useState<any>(null);
+  const [alignmentData, setAlignmentData] = useState<{
+    success: boolean;
+    beforeCenter: { x: number; y: number };
+    afterCenter: { x: number; y: number };
+    beforeSize: number;
+    afterSize: number;
+    scaleRatio: number;
+    beforeAngles: { roll: number; tilt: number; pan: number };
+    afterAngles: { roll: number; tilt: number; pan: number };
+    alignment: {
+      offsetX: number;
+      offsetY: number;
+      rotationDiff: number;
+      scale: number;
+    };
+  } | null>(null);
   const [result, setResult] = useState<{
     success: boolean;
     diff?: {
@@ -52,8 +68,8 @@ export default function ComparePage() {
       setAlignmentData(alignData);
       
       // 2. CanvasでBefore画像を補正
-      const beforeImg = new Image();
-      const afterImg = new Image();
+      const beforeImg = new window.Image();
+      const afterImg = new window.Image();
       
       beforeImg.onload = () => {
         afterImg.onload = () => {
@@ -197,24 +213,30 @@ export default function ComparePage() {
           <div className="relative inline-block">
             {alignedBefore ? (
               // 補正済み画像を表示
-              <img
+              <Image
                 src={alignedBefore}
                 alt="Aligned Comparison"
+                width={400}
+                height={400}
                 className="w-[400px] h-[400px] object-cover rounded-lg shadow-lg border-2 border-purple-200"
               />
             ) : (
               // 通常の重ね合わせ表示
               <>
                 {/* After画像（背景） */}
-                <img
+                <Image
                   src={after}
                   alt="After"
+                  width={400}
+                  height={400}
                   className="w-[400px] h-[400px] object-cover rounded-lg shadow-lg border-2 border-green-200"
                 />
                 {/* Before画像（上に半透明で重ねる） */}
-                <img
+                <Image
                   src={before}
                   alt="Before"
+                  width={400}
+                  height={400}
                   className="absolute top-0 left-0 w-[400px] h-[400px] object-cover rounded-lg border-2 border-blue-200"
                   style={{ opacity }}
                 />
