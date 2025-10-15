@@ -6,6 +6,8 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string>("");
 
   const startCamera = async () => {
     try {
@@ -25,6 +27,34 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
     } catch (error) {
       console.error("カメラの起動に失敗しました:", error);
       alert("カメラの起動に失敗しました。カメラの許可を確認してください。");
+    }
+  };
+
+  const analyzeFace = async (imageDataUrl: string) => {
+    setIsAnalyzing(true);
+    setAnalysisResult("");
+    
+    try {
+      const res = await fetch("/api/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageDataUrl }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        if (data.faceCount > 0) {
+          setAnalysisResult(`顔を ${data.faceCount} 件検出しました！`);
+        } else {
+          setAnalysisResult("顔が検出されませんでした。");
+        }
+      } else {
+        setAnalysisResult("エラー: " + data.error);
+      }
+    } catch (e) {
+      setAnalysisResult("通信エラーが発生しました。");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -52,6 +82,10 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
           // 高品質で保存
           const imageData = canvas.toDataURL("image/jpeg", 0.9);
           onCapture(imageData);
+          
+          // Vision APIで解析
+          analyzeFace(imageData);
+          
           return 0;
         }
         return prev - 1;
@@ -101,6 +135,19 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
         </button>
       </div>
       
+      {/* 解析結果表示 */}
+      {isAnalyzing && (
+        <div className="mt-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+          <p>🔍 Vision APIで解析中...</p>
+        </div>
+      )}
+
+      {analysisResult && (
+        <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <p><strong>解析結果:</strong> {analysisResult}</p>
+        </div>
+      )}
+
       <div className="mt-4 text-sm text-gray-600">
         <p>📸 撮影のコツ:</p>
         <ul className="text-left mt-2 space-y-1">

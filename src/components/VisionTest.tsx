@@ -18,13 +18,13 @@ export default function VisionTest() {
     setImagePreview(sampleImage);
 
     try {
-      const response = await fetch('/api/vision-test', {
+      const response = await fetch('/api/vision', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageBase64: sampleImage
+          image: sampleImage
         })
       });
 

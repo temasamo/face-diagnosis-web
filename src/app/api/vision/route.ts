@@ -13,9 +13,9 @@ const client = new vision.ImageAnnotatorClient({
 export async function POST(req: NextRequest) {
   try {
     // リクエストから画像データを取得
-    const { imageBase64 } = await req.json();
+    const { image } = await req.json();
 
-    if (!imageBase64) {
+    if (!image) {
       return NextResponse.json(
         { error: "画像データがありません。" },
         { status: 400 }
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Base64データからdata:image/...の部分を除去
-    const base64Data = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+    const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
 
     // Vision APIに送信
     const [result] = await client.faceDetection({
@@ -42,7 +42,11 @@ export async function POST(req: NextRequest) {
       detectionConfidence: face.detectionConfidence,
     }));
 
-    return NextResponse.json({ faces: response });
+    return NextResponse.json({ 
+      success: true,
+      faceCount: faces.length,
+      faces: response 
+    });
   } catch (error: any) {
     console.error("Vision API Error:", error);
     return NextResponse.json({
