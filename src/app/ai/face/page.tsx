@@ -31,56 +31,30 @@ export default function FaceDiagnosisPage() {
     setAnalysisResult("");
 
     try {
-      // Before画像をVision APIで解析
-      const beforeResponse = await fetch('/api/vision', {
+      // 新しい比較APIを使用
+      const response = await fetch('/api/compare', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: before
+          before: before,
+          after: after
         })
       });
 
-      const beforeData = await beforeResponse.json();
+      const data = await response.json();
 
-      // After画像をVision APIで解析
-      const afterResponse = await fetch('/api/vision', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: after
-        })
-      });
-
-      const afterData = await afterResponse.json();
-
-      if (!beforeResponse.ok || !afterResponse.ok) {
-        throw new Error('Vision APIとの通信に失敗しました');
+      if (!response.ok) {
+        throw new Error(data.error || 'API request failed');
       }
 
-      // 結果を比較して表示
-      const beforeFaces = beforeData.faceCount || 0;
-      const afterFaces = afterData.faceCount || 0;
-      
-      let result = `📊 顔検出結果:\n`;
-      result += `施術前: ${beforeFaces}件の顔を検出\n`;
-      result += `施術後: ${afterFaces}件の顔を検出\n\n`;
-      
-      if (beforeFaces > 0 && afterFaces > 0) {
-        result += `✅ 両方の画像で顔が正常に検出されました。\n`;
-        result += `Google Cloud Vision APIによる顔検出が成功しています。`;
-      } else if (beforeFaces === 0 && afterFaces === 0) {
-        result += `⚠️ 両方の画像で顔が検出されませんでした。\n`;
-        result += `画像の品質や顔の位置を確認してください。`;
+      if (data.success) {
+        // AI診断コメントを表示
+        setAnalysisResult(data.comment);
       } else {
-        result += `⚠️ 片方の画像で顔が検出されませんでした。\n`;
-        result += `撮影条件を統一してください。`;
+        setAnalysisResult(data.message || '分析に失敗しました');
       }
-
-      setAnalysisResult(result);
     } catch (error) {
       setAnalysisResult(`エラー: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
     } finally {
