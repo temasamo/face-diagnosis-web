@@ -8,7 +8,19 @@ export default function ComparePage() {
   const [after, setAfter] = useState<string | null>(null);
   const [result, setResult] = useState<{
     success: boolean;
-    diff?: any;
+    diff?: {
+      joy: string;
+      anger: string;
+      sorrow: string;
+      surprise: string;
+      headTilt: number;
+      roll: number;
+      tilt: number;
+      detectionConfidence: {
+        before: number;
+        after: number;
+      };
+    };
     comment?: string;
     faceCount?: { before: number; after: number };
     message?: string;
@@ -46,7 +58,7 @@ export default function ComparePage() {
       
       const data = await res.json();
       setResult(data);
-    } catch (error) {
+    } catch {
       setResult({
         success: false,
         message: "通信エラーが発生しました。"
