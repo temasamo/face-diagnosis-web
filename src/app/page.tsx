@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ApiTest from "@/components/ApiTest";
+import VisionTest from "@/components/VisionTest";
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
@@ -12,8 +13,9 @@ export default function Home() {
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <h1 className="text-3xl font-bold text-center">AI顔診断アプリ</h1>
         
-        <div className="w-full">
+        <div className="w-full space-y-6">
           <ApiTest />
+          <VisionTest />
         </div>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
