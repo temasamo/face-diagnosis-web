@@ -105,8 +105,8 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
         
         {/* カウントダウン表示 */}
         {countdown > 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-            <div className="text-6xl font-bold text-white">
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg">
+            <div className="text-6xl font-bold text-white bg-black bg-opacity-70 rounded-full w-20 h-20 flex items-center justify-center shadow-lg">
               {countdown}
             </div>
           </div>
