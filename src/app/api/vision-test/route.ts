@@ -3,9 +3,10 @@ import vision from "@google-cloud/vision";
 
 // Google Cloud Vision API クライアント初期化
 const client = new vision.ImageAnnotatorClient({
+  projectId: "lunar-planet-475206",
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"), // 改行文字を復元
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
   },
 });
 
@@ -21,9 +22,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Base64データからdata:image/...の部分を除去
+    const base64Data = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+
     // Vision APIに送信
     const [result] = await client.faceDetection({
-      image: { content: imageBase64 },
+      image: { content: base64Data },
     });
 
     const faces = result.faceAnnotations || [];
@@ -41,10 +45,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ faces: response });
   } catch (error: unknown) {
     console.error("Vision API Error:", error);
+    
+    // 環境変数の確認
+    const hasCredentials = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
+    
     return NextResponse.json(
       { 
         error: "Vision APIとの通信に失敗しました。", 
-        details: error instanceof Error ? error.message : "Unknown error" 
+        details: error instanceof Error ? error.message : "Unknown error",
+        hasCredentials: !!hasCredentials,
+        clientEmail: process.env.GOOGLE_CLIENT_EMAIL ? "設定済み" : "未設定",
+        privateKey: process.env.GOOGLE_PRIVATE_KEY ? "設定済み" : "未設定"
       },
       { status: 500 }
     );
