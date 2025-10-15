@@ -3,7 +3,18 @@
 import { useState } from "react";
 
 export default function VisionTest() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    success: boolean;
+    faceCount: number;
+    faces: Array<{
+      id: number;
+      joyLikelihood: string;
+      sorrowLikelihood: string;
+      angerLikelihood: string;
+      surpriseLikelihood: string;
+      detectionConfidence: number;
+    }>;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -90,7 +101,7 @@ export default function VisionTest() {
             {result.faces && result.faces.length > 0 ? (
               <div>
                 <p className="font-bold">検出された顔: {result.faces.length}個</p>
-                {result.faces.map((face: any, index: number) => (
+                {result.faces.map((face, index: number) => (
                   <div key={index} className="mt-2 p-2 bg-white rounded border">
                     <p><strong>顔 {face.id}:</strong></p>
                     <p>• 喜び: {formatLikelihood(face.joyLikelihood)}</p>

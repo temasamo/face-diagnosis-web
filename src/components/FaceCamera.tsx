@@ -51,7 +51,7 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
       } else {
         setAnalysisResult("エラー: " + data.error);
       }
-    } catch (e) {
+    } catch {
       setAnalysisResult("通信エラーが発生しました。");
     } finally {
       setIsAnalyzing(false);

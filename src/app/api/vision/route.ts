@@ -47,12 +47,15 @@ export async function POST(req: NextRequest) {
       faceCount: faces.length,
       faces: response 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Vision API Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json({
       error: "Vision APIとの通信に失敗しました。",
-      details: error.message,
-      stack: error.stack,
+      details: errorMessage,
+      stack: errorStack,
     }, { status: 500 });
   }
 }
