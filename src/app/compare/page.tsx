@@ -11,6 +11,16 @@ export default function ComparePage() {
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState<'overlay' | 'side-by-side'>('overlay'); // 比較モード
+
+  // 画像保存関数
+  const saveImage = (imageDataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = imageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   const [alignmentData, setAlignmentData] = useState<{
     success: boolean;
     beforeCenter: { x: number; y: number };
@@ -284,14 +294,15 @@ export default function ComparePage() {
                     📸 Before
                   </span>
                 </div>
-                <Image
-                  src={before}
-                  alt="Before"
-                  width={400}
-                  height={400}
-                  className="w-full h-auto rounded-lg shadow-lg border-2 border-blue-200"
-                  style={{ aspectRatio: "1/1" }}
-                />
+                <div className="relative">
+                  <Image
+                    src={before}
+                    alt="Before"
+                    width={400}
+                    height={400}
+                    className="w-full h-auto rounded-lg shadow-lg border-2 border-blue-200 object-contain"
+                  />
+                </div>
               </div>
               
               {/* After画像 */}
@@ -301,14 +312,15 @@ export default function ComparePage() {
                     ✨ After
                   </span>
                 </div>
-                <Image
-                  src={after}
-                  alt="After"
-                  width={400}
-                  height={400}
-                  className="w-full h-auto rounded-lg shadow-lg border-2 border-green-200"
-                  style={{ aspectRatio: "1/1" }}
-                />
+                <div className="relative">
+                  <Image
+                    src={after}
+                    alt="After"
+                    width={400}
+                    height={400}
+                    className="w-full h-auto rounded-lg shadow-lg border-2 border-green-200 object-contain"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -356,6 +368,41 @@ export default function ComparePage() {
         </div>
       )}
 
+      {/* 画像保存ボタン */}
+      {before && after && (
+        <div className="mb-6 flex justify-center gap-3 flex-wrap">
+          <button
+            onClick={() => {
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              saveImage(before, `before-${timestamp}.jpg`);
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            💾 Before画像を保存
+          </button>
+          <button
+            onClick={() => {
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              saveImage(after, `after-${timestamp}.jpg`);
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+          >
+            💾 After画像を保存
+          </button>
+          {comparisonMode === 'overlay' && alignedBefore && (
+            <button
+              onClick={() => {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                saveImage(alignedBefore, `aligned-comparison-${timestamp}.jpg`);
+              }}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+            >
+              💾 補正済み比較画像を保存
+            </button>
+          )}
+        </div>
+      )}
+
       {/* AI分析ボタン */}
       {before && after && (
         <div className="mb-8">
@@ -368,25 +415,48 @@ export default function ComparePage() {
                 : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl"
             }`}
           >
-            {loading ? "🤖 AI分析中..." : "✨ AIで診断する"}
+            {loading ? "🤖 美容効果分析中..." : "✨ 美容効果を診断する"}
           </button>
         </div>
       )}
 
-      {/* 結果表示 */}
+      {/* 美容効果診断結果表示 */}
       {result && result.success && (
-        <div className="mt-8 text-left bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl shadow-lg border border-green-200">
-          <h2 className="text-xl font-bold text-green-800 mb-4">✨ AI診断コメント</h2>
-          <p className="text-gray-800 leading-relaxed text-lg bg-white p-4 rounded-lg shadow-sm">
-            {result.comment}
-          </p>
+        <div className="mt-8 text-left bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-xl shadow-lg border border-pink-200">
+          <h2 className="text-xl font-bold text-pink-800 mb-4">✨ 美容効果診断結果</h2>
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <p className="text-gray-800 leading-relaxed text-lg mb-3">
+              {result.comment}
+            </p>
+            <div className="text-sm text-pink-600 bg-pink-50 p-3 rounded border-l-4 border-pink-300">
+              💡 <strong>美容効果のポイント:</strong> マッサージ、オイル、パック等の施術による肌質改善、リフトアップ効果、シワ・たるみの軽減を分析しています。
+            </div>
+          </div>
 
           <div className="mt-4 text-sm text-gray-500">
             <details className="cursor-pointer">
-              <summary className="font-medium hover:text-gray-700">📊 解析データを表示</summary>
-              <pre className="bg-white mt-2 p-3 rounded text-xs overflow-x-auto border">
-                {JSON.stringify(result.diff, null, 2)}
-              </pre>
+              <summary className="font-medium hover:text-gray-700">📊 詳細解析データを表示</summary>
+              <div className="bg-white mt-2 p-3 rounded text-xs overflow-x-auto border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">🎭 表情分析</h4>
+                    <pre className="text-xs">{JSON.stringify({
+                      joy: result.diff?.joy,
+                      anger: result.diff?.anger,
+                      sorrow: result.diff?.sorrow,
+                      surprise: result.diff?.surprise
+                    }, null, 2)}</pre>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">📐 顔の角度変化</h4>
+                    <pre className="text-xs">{JSON.stringify({
+                      headTilt: result.diff?.headTilt,
+                      roll: result.diff?.roll,
+                      tilt: result.diff?.tilt
+                    }, null, 2)}</pre>
+                  </div>
+                </div>
+              </div>
             </details>
           </div>
         </div>
@@ -408,7 +478,9 @@ export default function ComparePage() {
           <li>2. 比較モードを選択してください（重ね合わせ or 横並び）</li>
           <li>3. 重ね合わせモードでは透明度スライダーで調整できます</li>
           <li>4. 重ね合わせモードでは顔位置自動補正機能が利用できます</li>
-          <li>5. 「AIで診断する」ボタンで詳細な分析結果を取得できます</li>
+          <li>5. 画像保存ボタンで撮影した画像をダウンロードできます</li>
+          <li>6. 「美容効果を診断する」ボタンで美容施術の効果を分析できます</li>
+          <li>7. マッサージ、オイル、パック等の施術効果を詳細に測定します</li>
         </ol>
       </div>
     </div>

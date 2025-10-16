@@ -8,6 +8,7 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
   const [countdown, setCountdown] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>("");
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const startCamera = async () => {
     try {
@@ -58,6 +59,15 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
     }
   };
 
+  const saveImage = (imageDataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = imageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const capturePhoto = () => {
     if (!isCameraReady) return;
     
@@ -81,6 +91,7 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
           
           // 高品質で保存
           const imageData = canvas.toDataURL("image/jpeg", 0.9);
+          setCapturedImage(imageData);
           onCapture(imageData);
           
           // Vision APIで解析
@@ -145,6 +156,30 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
       {analysisResult && (
         <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           <p><strong>解析結果:</strong> {analysisResult}</p>
+        </div>
+      )}
+
+      {/* 撮影した画像の表示と保存 */}
+      {capturedImage && (
+        <div className="mt-4 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+          <h3 className="font-semibold text-gray-800 mb-3">📸 撮影した画像</h3>
+          <div className="flex flex-col items-center space-y-3">
+            <img 
+              src={capturedImage} 
+              alt="Captured" 
+              className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+              style={{ maxHeight: '300px' }}
+            />
+            <button
+              onClick={() => {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                saveImage(capturedImage, `face-capture-${timestamp}.jpg`);
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              💾 画像を保存
+            </button>
+          </div>
         </div>
       )}
 

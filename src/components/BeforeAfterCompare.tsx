@@ -8,6 +8,16 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState<'overlay' | 'side-by-side'>('overlay'); // 比較モード
+
+  // 画像保存関数
+  const saveImage = (imageDataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = imageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   const [alignmentData, setAlignmentData] = useState<{
     success: boolean;
     beforeCenter: { x: number; y: number };
@@ -190,39 +200,41 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
         </div>
       ) : (
         // 横並び比較モード
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Before画像 */}
           <div className="text-center">
-            <div className="mb-2">
-              <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+            <div className="mb-3">
+              <span className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold">
                 📸 Before
               </span>
             </div>
-            <Image
-              src={before}
-              alt="Before"
-              width={400}
-              height={400}
-              className="w-full h-auto rounded-lg shadow-lg border-2 border-blue-200"
-              style={{ aspectRatio: "1/1" }}
-            />
+            <div className="relative">
+              <Image
+                src={before}
+                alt="Before"
+                width={400}
+                height={400}
+                className="w-full h-auto rounded-lg shadow-lg border-2 border-blue-200 object-contain"
+              />
+            </div>
           </div>
           
           {/* After画像 */}
           <div className="text-center">
-            <div className="mb-2">
-              <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+            <div className="mb-3">
+              <span className="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold">
                 ✨ After
               </span>
             </div>
-            <Image
-              src={after}
-              alt="After"
-              width={400}
-              height={400}
-              className="w-full h-auto rounded-lg shadow-lg border-2 border-green-200"
-              style={{ aspectRatio: "1/1" }}
-            />
+            <div className="relative">
+              <Image
+                src={after}
+                alt="After"
+                width={400}
+                height={400}
+                className="w-full h-auto rounded-lg shadow-lg border-2 border-green-200 object-contain"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -267,6 +279,39 @@ export default function BeforeAfterCompare({ before, after }: { before: string; 
           </div>
         </div>
       )}
+
+      {/* 画像保存ボタン */}
+      <div className="mt-4 flex justify-center gap-3">
+        <button
+          onClick={() => {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            saveImage(before, `before-${timestamp}.jpg`);
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          💾 Before画像を保存
+        </button>
+        <button
+          onClick={() => {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            saveImage(after, `after-${timestamp}.jpg`);
+          }}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+        >
+          💾 After画像を保存
+        </button>
+        {comparisonMode === 'overlay' && alignedBefore && (
+          <button
+            onClick={() => {
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              saveImage(alignedBefore, `aligned-comparison-${timestamp}.jpg`);
+            }}
+            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+          >
+            💾 補正済み比較画像を保存
+          </button>
+        )}
+      </div>
     </div>
   );
 }
