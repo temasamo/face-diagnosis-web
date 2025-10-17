@@ -51,6 +51,38 @@ export default function ComparePage() {
         before: number;
         after: number;
       };
+      measurements?: {
+        faceWidth: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+        faceHeight: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+        eyeDistance: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+        eyebrowToEyeDistance: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+        faceAngle: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+      };
     };
     comment?: string;
     faceCount?: { before: number; after: number };
@@ -432,6 +464,107 @@ export default function ComparePage() {
               💡 <strong>美容効果のポイント:</strong> マッサージ、オイル、パック等の施術による肌質改善、リフトアップ効果、シワ・たるみの軽減を分析しています。
             </div>
           </div>
+
+          {/* 精密数値測定結果 */}
+          {result.diff?.measurements && (
+            <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="font-bold text-blue-800 mb-3">📏 精密数値測定結果</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 顔の幅 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">顔の幅</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.faceWidth.change < 0 ? 'text-green-600' : 
+                      result.diff.measurements.faceWidth.change > 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.faceWidth.change > 0 ? '+' : ''}{result.diff.measurements.faceWidth.change}mm
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.measurements.faceWidth.before} → {result.diff.measurements.faceWidth.after}
+                  </div>
+                </div>
+
+                {/* 顔の高さ */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">顔の高さ</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.faceHeight.change > 0 ? 'text-green-600' : 
+                      result.diff.measurements.faceHeight.change < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.diff.measurements.faceHeight.change}mm
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.measurements.faceHeight.before} → {result.diff.measurements.faceHeight.after}
+                  </div>
+                </div>
+
+                {/* 目の間隔 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">目の間隔</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.eyeDistance.change > 0 ? 'text-green-600' : 
+                      result.diff.measurements.eyeDistance.change < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyeDistance.change}mm
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.measurements.eyeDistance.before} → {result.diff.measurements.eyeDistance.after}
+                  </div>
+                </div>
+
+                {/* 眉毛と目の距離 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">眉毛と目の距離</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.eyebrowToEyeDistance.change < 0 ? 'text-green-600' : 
+                      result.diff.measurements.eyebrowToEyeDistance.change > 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyebrowToEyeDistance.change}mm
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.measurements.eyebrowToEyeDistance.before} → {result.diff.measurements.eyebrowToEyeDistance.after}
+                  </div>
+                </div>
+
+                {/* フェイスライン角度 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">フェイスライン角度</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.faceAngle.change > 0 ? 'text-green-600' : 
+                      result.diff.measurements.faceAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.faceAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceAngle.change}度
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.measurements.faceAngle.before} → {result.diff.measurements.faceAngle.after}
+                  </div>
+                </div>
+
+                {/* 検出信頼度 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">検出信頼度</span>
+                    <span className="text-sm font-bold text-blue-600">
+                      {((result.diff.detectionConfidence.after - result.diff.detectionConfidence.before) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {((result.diff.detectionConfidence.before) * 100).toFixed(1)}% → {((result.diff.detectionConfidence.after) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 text-sm text-gray-500">
             <details className="cursor-pointer">

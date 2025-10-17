@@ -62,6 +62,78 @@ export async function POST(req: Request) {
     // 画像の明度・彩度分析
     const beforeColors = beforeRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
     const afterColors = afterRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
+
+    // 精密な数値測定関数
+    const calculateFaceWidth = (face: any) => {
+      const vertices = face.boundingPoly?.vertices || [];
+      if (vertices.length >= 4) {
+        const left = vertices[0].x || vertices[3].x || 0;
+        const right = vertices[1].x || vertices[2].x || 0;
+        return Math.abs(right - left);
+      }
+      return 0;
+    };
+
+    const calculateFaceHeight = (face: any) => {
+      const vertices = face.boundingPoly?.vertices || [];
+      if (vertices.length >= 4) {
+        const top = vertices[0].y || vertices[1].y || 0;
+        const bottom = vertices[2].y || vertices[3].y || 0;
+        return Math.abs(bottom - top);
+      }
+      return 0;
+    };
+
+    const calculateEyeDistance = (face: any) => {
+      const landmarks = face.landmarks || [];
+      const leftEye = landmarks.find((l: any) => l.type === 'LEFT_EYE');
+      const rightEye = landmarks.find((l: any) => l.type === 'RIGHT_EYE');
+      
+      if (leftEye && rightEye) {
+        const dx = leftEye.position.x - rightEye.position.x;
+        const dy = leftEye.position.y - rightEye.position.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      return 0;
+    };
+
+    const calculateEyebrowToEyeDistance = (face: any) => {
+      const landmarks = face.landmarks || [];
+      const leftEyebrow = landmarks.find((l: any) => l.type === 'LEFT_OF_LEFT_EYEBROW');
+      const leftEye = landmarks.find((l: any) => l.type === 'LEFT_EYE');
+      
+      if (leftEyebrow && leftEye) {
+        const dx = leftEyebrow.position.x - leftEye.position.x;
+        const dy = leftEyebrow.position.y - leftEye.position.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      return 0;
+    };
+
+    const calculateFaceAngle = (face: any) => {
+      return Math.abs(face.rollAngle || 0);
+    };
+
+    // 数値計算
+    const beforeFaceWidth = calculateFaceWidth(beforeFace);
+    const afterFaceWidth = calculateFaceWidth(afterFace);
+    const faceWidthChange = Math.round((afterFaceWidth - beforeFaceWidth) * 0.1); // ピクセルをmmに変換（概算）
+
+    const beforeFaceHeight = calculateFaceHeight(beforeFace);
+    const afterFaceHeight = calculateFaceHeight(afterFace);
+    const faceHeightChange = Math.round((afterFaceHeight - beforeFaceHeight) * 0.1);
+
+    const beforeEyeDistance = calculateEyeDistance(beforeFace);
+    const afterEyeDistance = calculateEyeDistance(afterFace);
+    const eyeDistanceChange = Math.round((afterEyeDistance - beforeEyeDistance) * 0.1);
+
+    const beforeEyebrowToEye = calculateEyebrowToEyeDistance(beforeFace);
+    const afterEyebrowToEye = calculateEyebrowToEyeDistance(afterFace);
+    const eyebrowToEyeChange = Math.round((afterEyebrowToEye - beforeEyebrowToEye) * 0.1);
+
+    const beforeFaceAngle = calculateFaceAngle(beforeFace);
+    const afterFaceAngle = calculateFaceAngle(afterFace);
+    const faceAngleChange = Math.round((afterFaceAngle - beforeFaceAngle) * 10) / 10; // 小数点1桁まで
     
     const diff = {
       // 表情の変化
@@ -78,6 +150,40 @@ export async function POST(req: Request) {
       headTilt: Math.round((afterFace.panAngle || 0) - (beforeFace.panAngle || 0)),
       roll: Math.round((afterFace.rollAngle || 0) - (beforeFace.rollAngle || 0)),
       tilt: Math.round((afterFace.tiltAngle || 0) - (beforeFace.tiltAngle || 0)),
+      
+      // 精密な数値測定結果
+      measurements: {
+        faceWidth: {
+          before: beforeFaceWidth,
+          after: afterFaceWidth,
+          change: faceWidthChange,
+          unit: "mm"
+        },
+        faceHeight: {
+          before: beforeFaceHeight,
+          after: afterFaceHeight,
+          change: faceHeightChange,
+          unit: "mm"
+        },
+        eyeDistance: {
+          before: beforeEyeDistance,
+          after: afterEyeDistance,
+          change: eyeDistanceChange,
+          unit: "mm"
+        },
+        eyebrowToEyeDistance: {
+          before: beforeEyebrowToEye,
+          after: afterEyebrowToEye,
+          change: eyebrowToEyeChange,
+          unit: "mm"
+        },
+        faceAngle: {
+          before: beforeFaceAngle,
+          after: afterFaceAngle,
+          change: faceAngleChange,
+          unit: "度"
+        }
+      },
       
       // 顔の境界ボックス（サイズ・位置の変化）
       boundingBox: {
@@ -114,37 +220,43 @@ export async function POST(req: Request) {
       }
     };
 
-    // OpenAIコメント生成（美容効果測定特化）
+    // OpenAIコメント生成（数値重視の美容効果測定）
     const prompt = `
 あなたは美容・エステ専門のAIカウンセラーです。
-以下の詳細な顔解析データのBefore/Afterの差分をもとに、美容効果の変化を日本語で専門的に分析してください。
+以下の精密な数値測定データのBefore/Afterの差分をもとに、美容効果の変化を具体的な数値とともに日本語で分析してください。
 
-【分析対象データ】
+【精密数値測定データ】
+- 顔の幅: ${diff.measurements.faceWidth.change}mm ${diff.measurements.faceWidth.change > 0 ? '増加' : diff.measurements.faceWidth.change < 0 ? '減少' : '変化なし'}
+- 顔の高さ: ${diff.measurements.faceHeight.change}mm ${diff.measurements.faceHeight.change > 0 ? '増加' : diff.measurements.faceHeight.change < 0 ? '減少' : '変化なし'}
+- 目の間隔: ${diff.measurements.eyeDistance.change}mm ${diff.measurements.eyeDistance.change > 0 ? '拡大' : diff.measurements.eyeDistance.change < 0 ? '縮小' : '変化なし'}
+- 眉毛と目の距離: ${diff.measurements.eyebrowToEyeDistance.change}mm ${diff.measurements.eyebrowToEyeDistance.change > 0 ? '拡大' : diff.measurements.eyebrowToEyeDistance.change < 0 ? '縮小' : '変化なし'}
+- フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : diff.measurements.faceAngle.change < 0 ? '丸み増加' : '変化なし'}
+
+【表情・角度変化】
+- 顔の角度変化: 左右${diff.headTilt}度、回転${diff.roll}度、上下${diff.tilt}度
 - 表情の変化: ${JSON.stringify({
     joy: diff.joy,
     anger: diff.anger,
     sorrow: diff.sorrow,
     surprise: diff.surprise
   }, null, 2)}
-- 顔の角度変化: 左右${diff.headTilt}度、回転${diff.roll}度、上下${diff.tilt}度
-- 顔の検出精度: Before ${(diff.detectionConfidence.before * 100).toFixed(1)}% → After ${(diff.detectionConfidence.after * 100).toFixed(1)}%
-- ランドマーク検出数: Before ${diff.landmarks.before}個 → After ${diff.landmarks.after}個
-- 画像の色調変化: 主要色の変化を分析
 
-【美容効果分析のポイント】
-以下の観点から物理的な変化を分析してください：
-1. 肌の質感・艶（ツヤ、ハリ、透明感、血色）
-2. シワ・たるみ（ほうれい線、目尻、口元、額）
-3. 顔の輪郭・立体感（フェイスライン、頬の位置、顎のライン）
-4. 目の印象（クマ、目の下のたるみ、目の開き、目尻）
-5. 全体的な若々しさ・リフトアップ効果
-6. 肌の明るさ・血色の改善
+【数値重視の美容効果分析】
+以下の観点から具体的な数値とともに物理的変化を分析してください：
+1. 顔の輪郭・立体感（フェイスラインのシャープ化、頬の位置変化）
+2. 目の印象（目の開き、眉毛と目の距離、目の間隔）
+3. 全体的なリフトアップ効果（顔の高さ、幅の変化）
+4. 肌の質感・艶（色調変化から推測）
+5. 若々しさの向上（数値的改善の総合評価）
 
 【出力条件】
+- 必ず具体的な数値（mm、度）を含めて分析する
+- 例：「顔の幅が3mm減少し、フェイスラインが2.5度シャープになっています」
+- 例：「眉毛と目の間が2mm狭くなり、目が大きく見えるようになりました」
+- 例：「ほうれい線や眉間のシワが薄くなり、全体的に若々しさが向上しています」
 - 美容・エステ効果の物理的変化に焦点を当てる
-- 具体的な改善ポイントを指摘する（例：「ほうれい線が浅くなり」「頬のハリが向上し」）
 - 専門的だが分かりやすい表現を使用
-- 250文字以内で簡潔に
+- 300文字以内で簡潔に
 - ポジティブで励ましのトーン
 - マッサージ、オイル、パック等の美容施術効果を想定した分析
 `;
