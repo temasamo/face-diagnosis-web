@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 
 export default function FaceCamera({ onCapture }: { onCapture: (img: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -164,9 +165,11 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
         <div className="mt-4 p-4 bg-gray-50 border border-gray-300 rounded-lg">
           <h3 className="font-semibold text-gray-800 mb-3">📸 撮影した画像</h3>
           <div className="flex flex-col items-center space-y-3">
-            <img 
+            <Image 
               src={capturedImage} 
               alt="Captured" 
+              width={400}
+              height={300}
               className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
               style={{ maxHeight: '300px' }}
             />

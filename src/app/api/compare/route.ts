@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     const afterColors = afterRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
 
     // 精密な数値測定関数
-    const calculateFaceWidth = (face: any) => {
+    const calculateFaceWidth = (face: { boundingPoly?: { vertices?: Array<{ x?: number; y?: number }> } }) => {
       const vertices = face.boundingPoly?.vertices || [];
       if (vertices.length >= 4) {
         const left = vertices[0].x || vertices[3].x || 0;
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateFaceHeight = (face: any) => {
+    const calculateFaceHeight = (face: { boundingPoly?: { vertices?: Array<{ x?: number; y?: number }> } }) => {
       const vertices = face.boundingPoly?.vertices || [];
       if (vertices.length >= 4) {
         const top = vertices[0].y || vertices[1].y || 0;
@@ -84,12 +84,12 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateEyeDistance = (face: any) => {
+    const calculateEyeDistance = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
-      const leftEye = landmarks.find((l: any) => l.type === 'LEFT_EYE');
-      const rightEye = landmarks.find((l: any) => l.type === 'RIGHT_EYE');
+      const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE');
+      const rightEye = landmarks.find((l) => l.type === 'RIGHT_EYE');
       
-      if (leftEye && rightEye) {
+      if (leftEye && rightEye && leftEye.position && rightEye.position) {
         const dx = leftEye.position.x - rightEye.position.x;
         const dy = leftEye.position.y - rightEye.position.y;
         return Math.sqrt(dx * dx + dy * dy);
@@ -97,12 +97,12 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateEyebrowToEyeDistance = (face: any) => {
+    const calculateEyebrowToEyeDistance = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
-      const leftEyebrow = landmarks.find((l: any) => l.type === 'LEFT_OF_LEFT_EYEBROW');
-      const leftEye = landmarks.find((l: any) => l.type === 'LEFT_EYE');
+      const leftEyebrow = landmarks.find((l) => l.type === 'LEFT_OF_LEFT_EYEBROW');
+      const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE');
       
-      if (leftEyebrow && leftEye) {
+      if (leftEyebrow && leftEye && leftEyebrow.position && leftEye.position) {
         const dx = leftEyebrow.position.x - leftEye.position.x;
         const dy = leftEyebrow.position.y - leftEye.position.y;
         return Math.sqrt(dx * dx + dy * dy);
@@ -110,29 +110,39 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateFaceAngle = (face: any) => {
+    const calculateFaceAngle = (face: { rollAngle?: number }) => {
       return Math.abs(face.rollAngle || 0);
     };
 
     // 数値計算
-    const beforeFaceWidth = calculateFaceWidth(beforeFace);
-    const afterFaceWidth = calculateFaceWidth(afterFace);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeFaceWidth = calculateFaceWidth(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterFaceWidth = calculateFaceWidth(afterFace as any);
     const faceWidthChange = Math.round((afterFaceWidth - beforeFaceWidth) * 0.1); // ピクセルをmmに変換（概算）
 
-    const beforeFaceHeight = calculateFaceHeight(beforeFace);
-    const afterFaceHeight = calculateFaceHeight(afterFace);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeFaceHeight = calculateFaceHeight(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterFaceHeight = calculateFaceHeight(afterFace as any);
     const faceHeightChange = Math.round((afterFaceHeight - beforeFaceHeight) * 0.1);
 
-    const beforeEyeDistance = calculateEyeDistance(beforeFace);
-    const afterEyeDistance = calculateEyeDistance(afterFace);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeEyeDistance = calculateEyeDistance(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterEyeDistance = calculateEyeDistance(afterFace as any);
     const eyeDistanceChange = Math.round((afterEyeDistance - beforeEyeDistance) * 0.1);
 
-    const beforeEyebrowToEye = calculateEyebrowToEyeDistance(beforeFace);
-    const afterEyebrowToEye = calculateEyebrowToEyeDistance(afterFace);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeEyebrowToEye = calculateEyebrowToEyeDistance(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterEyebrowToEye = calculateEyebrowToEyeDistance(afterFace as any);
     const eyebrowToEyeChange = Math.round((afterEyebrowToEye - beforeEyebrowToEye) * 0.1);
 
-    const beforeFaceAngle = calculateFaceAngle(beforeFace);
-    const afterFaceAngle = calculateFaceAngle(afterFace);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeFaceAngle = calculateFaceAngle(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterFaceAngle = calculateFaceAngle(afterFace as any);
     const faceAngleChange = Math.round((afterFaceAngle - beforeFaceAngle) * 10) / 10; // 小数点1桁まで
     
     const diff = {
@@ -256,7 +266,8 @@ export async function POST(req: Request) {
 - 例：「ほうれい線や眉間のシワが薄くなり、全体的に若々しさが向上しています」
 - 美容・エステ効果の物理的変化に焦点を当てる
 - 専門的だが分かりやすい表現を使用
-- 300文字以内で簡潔に
+- 400文字以内で簡潔に
+- 必ず完全な文章で終了する（途中で切れないように）
 - ポジティブで励ましのトーン
 - マッサージ、オイル、パック等の美容施術効果を想定した分析
 `;
@@ -264,7 +275,7 @@ export async function POST(req: Request) {
     const aiRes = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 300,
+      max_tokens: 500,
       temperature: 0.7,
     });
 
