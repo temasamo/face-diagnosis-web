@@ -42,6 +42,16 @@ export async function POST(req: Request) {
     // Base64データからdata:image/...の部分を除去
     const clean = (img: string) => img.replace(/^data:image\/\w+;base64,/, "");
 
+    // 画像データの検証
+    console.log("画像データ検証:", {
+      beforeLength: before.length,
+      afterLength: after.length,
+      beforeCleanLength: clean(before).length,
+      afterCleanLength: clean(after).length,
+      beforePrefix: before.substring(0, 30),
+      afterPrefix: after.substring(0, 30)
+    });
+
     // Vision API呼び出し（Before / After）- 複数の分析を実行
     console.log("Before画像のVision API呼び出し開始");
     const [beforeRes] = await visionClient.annotateImage({
@@ -73,11 +83,15 @@ export async function POST(req: Request) {
         beforeFaces: beforeFaces.length,
         afterFaces: afterFaces.length,
         beforeImageSize: clean(before).length,
-        afterImageSize: clean(after).length
+        afterImageSize: clean(after).length,
+        beforeImagePreview: clean(before).substring(0, 50) + "...",
+        afterImagePreview: clean(after).substring(0, 50) + "...",
+        beforeResFull: JSON.stringify(beforeRes, null, 2),
+        afterResFull: JSON.stringify(afterRes, null, 2)
       });
       return NextResponse.json({ 
         success: false, 
-        message: `顔を検出できませんでした。Before: ${beforeFaces.length}個, After: ${afterFaces.length}個の顔を検出。画像の品質や顔の位置を確認してください。` 
+        message: `顔を検出できませんでした。Before: ${beforeFaces.length}個, After: ${afterFaces.length}個の顔を検出。画像の品質や顔の位置を確認してください。詳細: ${JSON.stringify({beforeFaces: beforeFaces.length, afterFaces: afterFaces.length})}` 
       });
     }
 
