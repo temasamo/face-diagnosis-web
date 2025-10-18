@@ -43,7 +43,8 @@ export default function TestVisionPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'API request failed');
+        console.error('API Error Response:', data);
+        throw new Error(data.error || data.details || 'API request failed');
       }
 
       setResult(data);
@@ -73,6 +74,12 @@ export default function TestVisionPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <h3 className="text-red-800 font-semibold mb-2">❌ エラー</h3>
             <p className="text-red-700">{error}</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-sm text-red-600">詳細エラー情報を表示</summary>
+              <pre className="text-xs mt-2 p-2 bg-red-100 rounded overflow-auto">
+                {JSON.stringify({ error, timestamp: new Date().toISOString() }, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
 
