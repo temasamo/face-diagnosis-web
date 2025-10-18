@@ -3,7 +3,21 @@
 import { useState } from "react";
 
 export default function TestVisionPage() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    success: boolean;
+    faceCount: number;
+    faces?: Array<{
+      id: number;
+      detectionConfidence: number;
+      joyLikelihood: string;
+    }>;
+    debug?: {
+      imageLength: number;
+      cleanImageLength: number;
+      hasClientEmail: boolean;
+      hasPrivateKey: boolean;
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
@@ -87,7 +101,7 @@ export default function TestVisionPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-blue-800 font-semibold mb-2">検出された顔</h3>
                 <div className="space-y-2">
-                  {result.faces.map((face: any, index: number) => (
+                  {result.faces.map((face, index: number) => (
                     <div key={index} className="text-sm">
                       <p><strong>顔 {face.id}:</strong></p>
                       <p>検出信頼度: {face.detectionConfidence}</p>
