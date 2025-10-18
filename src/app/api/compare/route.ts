@@ -18,6 +18,21 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    // 環境変数の確認
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+      console.error("Google Cloud認証情報が設定されていません");
+      return NextResponse.json({ 
+        error: "Google Cloud認証情報が設定されていません。環境変数を確認してください。" 
+      }, { status: 500 });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI APIキーが設定されていません");
+      return NextResponse.json({ 
+        error: "OpenAI APIキーが設定されていません。環境変数を確認してください。" 
+      }, { status: 500 });
+    }
+
     const { before, after } = await req.json();
     
     if (!before || !after) {
@@ -28,6 +43,7 @@ export async function POST(req: Request) {
     const clean = (img: string) => img.replace(/^data:image\/\w+;base64,/, "");
 
     // Vision API呼び出し（Before / After）- 複数の分析を実行
+    console.log("Before画像のVision API呼び出し開始");
     const [beforeRes] = await visionClient.annotateImage({
       image: { content: clean(before) },
       features: [
@@ -36,6 +52,9 @@ export async function POST(req: Request) {
         { type: 'IMAGE_PROPERTIES', maxResults: 1 }
       ]
     });
+    console.log("Before画像のVision API呼び出し完了:", beforeRes.faceAnnotations?.length || 0, "個の顔を検出");
+
+    console.log("After画像のVision API呼び出し開始");
     const [afterRes] = await visionClient.annotateImage({
       image: { content: clean(after) },
       features: [
@@ -44,14 +63,21 @@ export async function POST(req: Request) {
         { type: 'IMAGE_PROPERTIES', maxResults: 1 }
       ]
     });
+    console.log("After画像のVision API呼び出し完了:", afterRes.faceAnnotations?.length || 0, "個の顔を検出");
 
     const beforeFaces = beforeRes.faceAnnotations || [];
     const afterFaces = afterRes.faceAnnotations || [];
 
     if (beforeFaces.length === 0 || afterFaces.length === 0) {
+      console.error("顔検出失敗:", {
+        beforeFaces: beforeFaces.length,
+        afterFaces: afterFaces.length,
+        beforeImageSize: clean(before).length,
+        afterImageSize: clean(after).length
+      });
       return NextResponse.json({ 
         success: false, 
-        message: "顔を検出できませんでした。画像の品質や顔の位置を確認してください。" 
+        message: `顔を検出できませんでした。Before: ${beforeFaces.length}個, After: ${afterFaces.length}個の顔を検出。画像の品質や顔の位置を確認してください。` 
       });
     }
 
