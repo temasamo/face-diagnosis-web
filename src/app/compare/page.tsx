@@ -14,19 +14,37 @@ export default function ComparePage() {
 
   // ✅ スマホ対応：画像リサイズ関数（3MB→1MB前後に圧縮）
   const resizeImage = async (file: File, maxSize = 1280): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(maxSize / img.width, maxSize / img.height);
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-        resolve(dataUrl);
-      };
-      img.src = URL.createObjectURL(file);
+    return new Promise((resolve, reject) => {
+      try {
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const scale = Math.min(maxSize / img.width, maxSize / img.height);
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Canvas context not available"));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            resolve(dataUrl);
+          } catch (error) {
+            console.error("Canvas processing error:", error);
+            reject(error);
+          }
+        };
+        img.onerror = (error) => {
+          console.error("Image load error:", error);
+          reject(error);
+        };
+        img.src = URL.createObjectURL(file);
+      } catch (error) {
+        console.error("Resize image error:", error);
+        reject(error);
+      }
     });
   };
 
@@ -223,9 +241,19 @@ export default function ComparePage() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                // ✅ スマホ対応：画像を自動リサイズ
-                const resizedImage = await resizeImage(file);
-                setBefore(resizedImage);
+                try {
+                  console.log("Before画像処理開始:", file.name, file.size);
+                  // ✅ スマホ対応：画像を自動リサイズ
+                  const resizedImage = await resizeImage(file);
+                  console.log("Before画像処理完了:", resizedImage.length);
+                  setBefore(resizedImage);
+                } catch (error) {
+                  console.error("Before画像処理エラー:", error);
+                  // エラー時は通常のFileReaderを使用
+                  const reader = new FileReader();
+                  reader.onloadend = () => setBefore(reader.result as string);
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -239,9 +267,19 @@ export default function ComparePage() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                // ✅ スマホ対応：画像を自動リサイズ
-                const resizedImage = await resizeImage(file);
-                setAfter(resizedImage);
+                try {
+                  console.log("After画像処理開始:", file.name, file.size);
+                  // ✅ スマホ対応：画像を自動リサイズ
+                  const resizedImage = await resizeImage(file);
+                  console.log("After画像処理完了:", resizedImage.length);
+                  setAfter(resizedImage);
+                } catch (error) {
+                  console.error("After画像処理エラー:", error);
+                  // エラー時は通常のFileReaderを使用
+                  const reader = new FileReader();
+                  reader.onloadend = () => setAfter(reader.result as string);
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
