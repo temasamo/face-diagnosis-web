@@ -12,6 +12,24 @@ export default function ComparePage() {
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState<'overlay' | 'side-by-side'>('overlay'); // 比較モード
 
+  // ✅ スマホ対応：画像リサイズ関数（3MB→1MB前後に圧縮）
+  const resizeImage = async (file: File, maxSize = 1280): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(maxSize / img.width, maxSize / img.height);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        resolve(dataUrl);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // 画像保存関数
   const saveImage = (imageDataUrl: string, filename: string) => {
     const link = document.createElement('a');
@@ -202,12 +220,12 @@ export default function ComparePage() {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => {
+            onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setBefore(reader.result as string);
-                reader.readAsDataURL(file);
+                // ✅ スマホ対応：画像を自動リサイズ
+                const resizedImage = await resizeImage(file);
+                setBefore(resizedImage);
               }
             }}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -218,12 +236,12 @@ export default function ComparePage() {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => {
+            onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setAfter(reader.result as string);
-                reader.readAsDataURL(file);
+                // ✅ スマホ対応：画像を自動リサイズ
+                const resizedImage = await resizeImage(file);
+                setAfter(resizedImage);
               }
             }}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
@@ -607,7 +625,7 @@ export default function ComparePage() {
       <div className="mt-12 bg-blue-50 p-6 rounded-xl border border-blue-200">
         <h3 className="font-bold text-lg mb-3 text-blue-800">📋 使い方</h3>
         <ol className="text-left text-blue-700 space-y-2">
-          <li>1. 「Before」と「After」の画像をそれぞれアップロードしてください</li>
+          <li>1. 「Before」と「After」の画像をそれぞれアップロードしてください（📱 スマホ画像は自動でリサイズされます）</li>
           <li>2. 比較モードを選択してください（重ね合わせ or 横並び）</li>
           <li>3. 重ね合わせモードでは透明度スライダーで調整できます</li>
           <li>4. 重ね合わせモードでは顔位置自動補正機能が利用できます</li>
