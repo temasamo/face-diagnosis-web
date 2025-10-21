@@ -277,7 +277,7 @@ export async function POST(req: Request) {
 
 【精密数値測定データ】
 - 顔の幅: ${diff.measurements.faceWidth.change}mm ${diff.measurements.faceWidth.change > 0 ? '増加' : diff.measurements.faceWidth.change < 0 ? '減少' : '変化なし'}
-- 顔の高さ: ${diff.measurements.faceHeight.change}mm ${diff.measurements.faceHeight.change > 0 ? '増加' : diff.measurements.faceHeight.change < 0 ? '減少' : '変化なし'}
+- 顔の長さ: ${diff.measurements.faceHeight.change}mm ${diff.measurements.faceHeight.change > 0 ? '増加' : diff.measurements.faceHeight.change < 0 ? '減少' : '変化なし'}
 - 目の間隔: ${diff.measurements.eyeDistance.change}mm ${diff.measurements.eyeDistance.change > 0 ? '拡大' : diff.measurements.eyeDistance.change < 0 ? '縮小' : '変化なし'}
 - 眉毛と目の距離: ${diff.measurements.eyebrowToEyeDistance.change}mm ${diff.measurements.eyebrowToEyeDistance.change > 0 ? '拡大' : diff.measurements.eyebrowToEyeDistance.change < 0 ? '縮小' : '変化なし'}
 - フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : diff.measurements.faceAngle.change < 0 ? '丸み増加' : '変化なし'}
@@ -295,7 +295,7 @@ export async function POST(req: Request) {
 以下の観点から具体的な数値とともに物理的変化を分析してください：
 1. 顔の輪郭・立体感（フェイスラインのシャープ化、頬の位置変化）
 2. 目の印象（目の開き、眉毛と目の距離、目の間隔）
-3. 全体的なリフトアップ効果（顔の高さ、幅の変化）
+3. 全体的なリフトアップ効果（顔の長さ、幅の変化）
 4. 肌の質感・艶（色調変化から推測）
 5. 若々しさの向上（数値的改善の総合評価）
 

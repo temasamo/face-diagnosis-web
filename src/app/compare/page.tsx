@@ -150,48 +150,56 @@ export default function ComparePage() {
       const beforeImg = new window.Image();
       const afterImg = new window.Image();
       
-      beforeImg.onload = () => {
-        afterImg.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          
-          const W = 400, H = 400;
-          canvas.width = W;
-          canvas.height = H;
-          
-          // Afterを背景として描画
-          ctx.drawImage(afterImg, 0, 0, W, H);
-          
-          // Before画像の補正処理
-          ctx.save();
-          
-          // 移動量を計算（After基準でBeforeを移動）
-          const offsetX = alignData.alignment.offsetX * (W / afterImg.width);
-          const offsetY = alignData.alignment.offsetY * (H / afterImg.height);
-          
-          // 回転補正
-          const angle = (alignData.alignment.rotationDiff * Math.PI) / 180;
-          ctx.translate(W / 2, H / 2);
-          ctx.rotate(angle);
-          ctx.translate(-W / 2, -H / 2);
-          
-          // スケール補正
-          const scale = alignData.alignment.scale;
-          ctx.scale(scale, scale);
-          
-          // Beforeを半透明で重ねる
-          ctx.globalAlpha = opacity;
-          ctx.drawImage(beforeImg, offsetX / scale, offsetY / scale, W / scale, H / scale);
-          ctx.globalAlpha = 1.0;
-          
-          ctx.restore();
-          
-          setAlignedBefore(canvas.toDataURL());
+      // 画像の読み込みを待つ
+      await new Promise<void>((resolve) => {
+        beforeImg.onload = () => {
+          afterImg.onload = () => resolve();
+          afterImg.src = after;
         };
-        afterImg.src = after;
-      };
-      beforeImg.src = before;
+        beforeImg.src = before;
+      });
+      
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      
+      // CanvasのサイズをAfter画像に合わせる
+      const W = afterImg.width;
+      const H = afterImg.height;
+      canvas.width = W;
+      canvas.height = H;
+      
+      // コンテキストを保存
+      ctx.save();
+      
+      // After画像の中心を基準に変換を適用
+      const centerX = W / 2;
+      const centerY = H / 2;
+      
+      // 変換の原点を中心に移動
+      ctx.translate(centerX, centerY);
+      
+      // 回転補正
+      ctx.rotate((alignData.alignment.rotationDiff * Math.PI) / 180);
+      
+      // スケール補正
+      ctx.scale(alignData.alignment.scale, alignData.alignment.scale);
+      
+      // 変換の原点を元に戻す
+      ctx.translate(-centerX, -centerY);
+      
+      // 平行移動補正
+      const offsetX = alignData.alignment.offsetX;
+      const offsetY = alignData.alignment.offsetY;
+      
+      // Before画像を補正された位置・角度・サイズで描画
+      // ここではAfter画像は描画せず、純粋に補正されたBefore画像のみを生成
+      ctx.drawImage(beforeImg, offsetX, offsetY, W, H);
+      
+      // コンテキストを復元
+      ctx.restore();
+      
+      setAlignedBefore(canvas.toDataURL("image/jpeg", 0.9)); // 補正済みBefore画像をセット
       
     } catch (error) {
       console.error("Alignment error:", error);
@@ -314,63 +322,47 @@ export default function ComparePage() {
             </button>
           </div>
 
-          {/* 顔位置自動補正ボタン（重ね合わせモードのみ） */}
-          {comparisonMode === 'overlay' && (
-            <div className="mb-4">
-              <button
-                onClick={alignFaces}
-                disabled={aligning}
-                className={`px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 ${
-                  aligning 
-                    ? "bg-gray-400 cursor-not-allowed" 
-                    : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
-                }`}
-              >
-                {aligning ? "🔄 顔位置補正中..." : "🎯 顔位置を自動補正"}
-              </button>
-              <p className="text-xs text-gray-500 mt-1">
-                Vision APIで顔の位置・角度・サイズを自動調整します
-              </p>
-            </div>
-          )}
+          {/* 顔位置自動補正ボタン（全モード対応） */}
+          <div className="mb-4">
+            <button
+              onClick={alignFaces}
+              disabled={aligning}
+              className={`px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 ${
+                aligning 
+                  ? "bg-gray-400 cursor-not-allowed" 
+                  : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
+              }`}
+            >
+              {aligning ? "🔄 顔位置補正中..." : "🎯 顔位置を自動補正"}
+            </button>
+            <p className="text-xs text-gray-500 mt-1">
+              Vision APIで顔の位置・角度・サイズを自動調整します
+            </p>
+          </div>
 
           {/* 比較表示エリア */}
           {comparisonMode === 'overlay' ? (
             // 重ね合わせ比較モード
             <div className="relative inline-block">
-              {alignedBefore ? (
-                // 補正済み画像を表示
-                <Image
-                  src={alignedBefore}
-                  alt="Aligned Comparison"
-                  width={400}
-                  height={400}
-                  className="w-[400px] h-[400px] object-cover rounded-lg shadow-lg border-2 border-purple-200"
-                />
-              ) : (
-                // 通常の重ね合わせ表示
-                <>
-                  {/* After画像（背景） */}
-                  <Image
-                    src={after}
-                    alt="After"
-                    width={400}
-                    height={400}
-                    className="w-[400px] h-[400px] object-cover rounded-lg shadow-lg border-2 border-green-200"
-                  />
-                  {/* Before画像（上に半透明で重ねる） */}
-                  <Image
-                    src={before}
-                    alt="Before"
-                    width={400}
-                    height={400}
-                    className="absolute top-0 left-0 w-[400px] h-[400px] object-cover rounded-lg border-2 border-blue-200"
-                    style={{ opacity }}
-                  />
-                  {/* 中央の境界線表示 */}
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-white shadow-lg"></div>
-                </>
-              )}
+              {/* After画像（背景） */}
+              <Image
+                src={after}
+                alt="After"
+                width={400}
+                height={400}
+                className="w-[400px] h-[400px] object-cover rounded-lg shadow-lg border-2 border-green-200"
+              />
+              {/* Before画像（上に半透明で重ねる） */}
+              <Image
+                src={alignedBefore || before}
+                alt="Before"
+                width={400}
+                height={400}
+                className="absolute top-0 left-0 w-[400px] h-[400px] object-cover rounded-lg border-2 border-blue-200"
+                style={{ opacity }}
+              />
+              {/* 中央の境界線表示 */}
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-white shadow-lg"></div>
             </div>
           ) : (
             // 横並び比較モード
@@ -379,12 +371,12 @@ export default function ComparePage() {
               <div className="text-center">
                 <div className="mb-3">
                   <span className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold">
-                    📸 Before
+                    📸 Before {alignedBefore && <span className="text-xs">(補正済み)</span>}
                   </span>
                 </div>
                 <div className="relative">
                   <Image
-                    src={before}
+                    src={alignedBefore || before}
                     alt="Before"
                     width={400}
                     height={400}
@@ -542,10 +534,10 @@ export default function ComparePage() {
                   </div>
                 </div>
 
-                {/* 顔の高さ */}
+                {/* 顔の長さ */}
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">顔の高さ</span>
+                    <span className="text-sm font-semibold text-gray-700">顔の長さ</span>
                     <span className={`text-sm font-bold ${
                       result.diff.measurements.faceHeight.change > 0 ? 'text-green-600' : 
                       result.diff.measurements.faceHeight.change < 0 ? 'text-red-600' : 'text-gray-600'
