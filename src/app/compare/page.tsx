@@ -119,6 +119,36 @@ export default function ComparePage() {
           unit: string;
         };
       };
+      skinAnalysis?: {
+        before: {
+          skinQuality: {
+            brightness: number;
+            saturation: number;
+            evenness: string;
+            tone: string;
+          };
+          wrinkleVisibility: number;
+          estimatedAge: string;
+        };
+        after: {
+          skinQuality: {
+            brightness: number;
+            saturation: number;
+            evenness: string;
+            tone: string;
+          };
+          wrinkleVisibility: number;
+          estimatedAge: string;
+        };
+        improvements: {
+          brightness: number;
+          saturation: number;
+          evenness: boolean;
+          tone: boolean;
+          wrinkleVisibility: number;
+          estimatedAge: boolean;
+        };
+      };
     };
     comment?: string;
     faceCount?: { before: number; after: number };
