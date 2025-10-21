@@ -614,6 +614,108 @@ export default function ComparePage() {
             </div>
           )}
 
+          {/* 肌の状態分析結果 */}
+          {result.diff?.skinAnalysis && (
+            <div className="mt-6 bg-gradient-to-r from-pink-50 to-rose-50 p-4 rounded-lg border border-pink-200">
+              <h3 className="font-bold text-pink-800 mb-3">🌸 肌の状態分析結果</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* 肌の明度 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">肌の明度</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.brightness > 0 ? 'text-green-600' : 
+                      result.diff.skinAnalysis.improvements.brightness < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.brightness}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.skinQuality.brightness} → {result.diff.skinAnalysis.after.skinQuality.brightness}
+                  </div>
+                </div>
+
+                {/* 肌の彩度 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">肌の彩度</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.saturation > 0 ? 'text-green-600' : 
+                      result.diff.skinAnalysis.improvements.saturation < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.saturation}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.skinQuality.saturation} → {result.diff.skinAnalysis.after.skinQuality.saturation}
+                  </div>
+                </div>
+
+                {/* 肌の均一性 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">肌の均一性</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.evenness ? 'text-green-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.evenness ? '改善' : '変化なし'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.skinQuality.evenness} → {result.diff.skinAnalysis.after.skinQuality.evenness}
+                  </div>
+                </div>
+
+                {/* 肌のトーン */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">肌のトーン</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.tone ? 'text-green-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.tone ? '変化' : '変化なし'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.skinQuality.tone} → {result.diff.skinAnalysis.after.skinQuality.tone}
+                  </div>
+                </div>
+
+                {/* シワの見えやすさ */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">シワの見えやすさ</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? 'text-green-600' : 
+                      result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.wrinkleVisibility}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.wrinkleVisibility}% → {result.diff.skinAnalysis.after.wrinkleVisibility}%
+                  </div>
+                </div>
+
+                {/* 肌年齢印象 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">肌年齢印象</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.skinAnalysis.improvements.estimatedAge ? 'text-green-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.skinAnalysis.improvements.estimatedAge ? '変化' : '変化なし'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {result.diff.skinAnalysis.before.estimatedAge} → {result.diff.skinAnalysis.after.estimatedAge}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 text-sm text-gray-500">
             <details className="cursor-pointer">
               <summary className="font-medium hover:text-gray-700">📊 詳細解析データを表示</summary>

@@ -52,14 +52,15 @@ export async function POST(req: Request) {
       afterPrefix: after.substring(0, 30)
     });
 
-    // Vision API呼び出し（Before / After）- 複数の分析を実行
+    // Vision API呼び出し（Before / After）- 詳細な顔分析を実行
     console.log("Before画像のVision API呼び出し開始");
     const [beforeRes] = await visionClient.annotateImage({
       image: { content: clean(before) },
       features: [
         { type: 'FACE_DETECTION', maxResults: 10 },
         { type: 'LANDMARK_DETECTION', maxResults: 10 },
-        { type: 'IMAGE_PROPERTIES', maxResults: 1 }
+        { type: 'IMAGE_PROPERTIES', maxResults: 1 },
+        { type: 'TEXT_DETECTION', maxResults: 1 } // シミやシワのテキスト検出にも対応
       ]
     });
     console.log("Before画像のVision API呼び出し完了:", beforeRes.faceAnnotations?.length || 0, "個の顔を検出");
@@ -70,7 +71,8 @@ export async function POST(req: Request) {
       features: [
         { type: 'FACE_DETECTION', maxResults: 10 },
         { type: 'LANDMARK_DETECTION', maxResults: 10 },
-        { type: 'IMAGE_PROPERTIES', maxResults: 1 }
+        { type: 'IMAGE_PROPERTIES', maxResults: 1 },
+        { type: 'TEXT_DETECTION', maxResults: 1 } // シミやシワのテキスト検出にも対応
       ]
     });
     console.log("After画像のVision API呼び出し完了:", afterRes.faceAnnotations?.length || 0, "個の顔を検出");
@@ -102,6 +104,41 @@ export async function POST(req: Request) {
     // 画像の明度・彩度分析
     const beforeColors = beforeRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
     const afterColors = afterRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
+
+    // 肌の状態分析関数（シワ・シミ・肌質の評価）
+    const analyzeSkinCondition = (face: any, colors: any[]) => {
+      // 肌の明度・彩度から肌質を評価
+      const skinTone = colors.length > 0 ? colors[0] : null;
+      const brightness = skinTone ? (skinTone.color.red + skinTone.color.green + skinTone.color.blue) / 3 : 0;
+      const saturation = skinTone ? Math.sqrt(
+        Math.pow(skinTone.color.red - brightness, 2) + 
+        Math.pow(skinTone.color.green - brightness, 2) + 
+        Math.pow(skinTone.color.blue - brightness, 2)
+      ) : 0;
+
+      // 顔の角度からシワの見えやすさを評価
+      const headTilt = Math.abs(face.panAngle || 0) + Math.abs(face.rollAngle || 0) + Math.abs(face.tiltAngle || 0);
+      const wrinkleVisibility = Math.min(headTilt / 30, 1); // 角度が大きいほどシワが見えやすい
+
+      // 肌の質感評価（明度と彩度から）
+      const skinQuality = {
+        brightness: Math.round(brightness),
+        saturation: Math.round(saturation),
+        evenness: saturation < 30 ? '良好' : saturation < 60 ? '普通' : '不均一',
+        tone: brightness > 200 ? '明るい' : brightness > 150 ? '普通' : '暗い'
+      };
+
+      return {
+        skinQuality,
+        wrinkleVisibility: Math.round(wrinkleVisibility * 100),
+        estimatedAge: face.joyLikelihood === 'VERY_LIKELY' ? '若々しい' : 
+                     face.angerLikelihood === 'VERY_LIKELY' ? '疲れている' : '普通'
+      };
+    };
+
+    // Before/Afterの肌状態分析
+    const beforeSkinAnalysis = analyzeSkinCondition(beforeFace, beforeColors);
+    const afterSkinAnalysis = analyzeSkinCondition(afterFace, afterColors);
 
     // 精密な数値測定関数
     const calculateFaceWidth = (face: { boundingPoly?: { vertices?: Array<{ x?: number; y?: number }> } }) => {
@@ -267,6 +304,20 @@ export async function POST(req: Request) {
             score: c.score
           }))
         }
+      },
+
+      // 肌の状態分析（シワ・シミ・肌質の変化）
+      skinAnalysis: {
+        before: beforeSkinAnalysis,
+        after: afterSkinAnalysis,
+        improvements: {
+          brightness: afterSkinAnalysis.skinQuality.brightness - beforeSkinAnalysis.skinQuality.brightness,
+          saturation: afterSkinAnalysis.skinQuality.saturation - beforeSkinAnalysis.skinQuality.saturation,
+          evenness: beforeSkinAnalysis.skinQuality.evenness !== afterSkinAnalysis.skinQuality.evenness,
+          tone: beforeSkinAnalysis.skinQuality.tone !== afterSkinAnalysis.skinQuality.tone,
+          wrinkleVisibility: afterSkinAnalysis.wrinkleVisibility - beforeSkinAnalysis.wrinkleVisibility,
+          estimatedAge: beforeSkinAnalysis.estimatedAge !== afterSkinAnalysis.estimatedAge
+        }
       }
     };
 
@@ -296,6 +347,27 @@ export async function POST(req: Request) {
     if (diff.sorrow !== "変化なし") expressionChanges.push(`悲しみ: ${diff.sorrow}`);
     if (diff.surprise !== "変化なし") expressionChanges.push(`驚き: ${diff.surprise}`);
 
+    // 肌の状態変化の確認
+    const skinChanges = [];
+    if (diff.skinAnalysis.improvements.brightness !== 0) {
+      skinChanges.push(`肌の明度: ${diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}${diff.skinAnalysis.improvements.brightness}`);
+    }
+    if (diff.skinAnalysis.improvements.saturation !== 0) {
+      skinChanges.push(`肌の彩度: ${diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}${diff.skinAnalysis.improvements.saturation}`);
+    }
+    if (diff.skinAnalysis.improvements.evenness) {
+      skinChanges.push(`肌の均一性: ${diff.skinAnalysis.before.skinQuality.evenness} → ${diff.skinAnalysis.after.skinQuality.evenness}`);
+    }
+    if (diff.skinAnalysis.improvements.tone) {
+      skinChanges.push(`肌のトーン: ${diff.skinAnalysis.before.skinQuality.tone} → ${diff.skinAnalysis.after.skinQuality.tone}`);
+    }
+    if (diff.skinAnalysis.improvements.wrinkleVisibility !== 0) {
+      skinChanges.push(`シワの見えやすさ: ${diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}${diff.skinAnalysis.improvements.wrinkleVisibility}%`);
+    }
+    if (diff.skinAnalysis.improvements.estimatedAge) {
+      skinChanges.push(`肌年齢印象: ${diff.skinAnalysis.before.estimatedAge} → ${diff.skinAnalysis.after.estimatedAge}`);
+    }
+
     // OpenAIコメント生成（変化項目のみに焦点）
     const prompt = `
 あなたは美容・エステ専門のAIカウンセラーです。
@@ -305,6 +377,8 @@ export async function POST(req: Request) {
 ${significantChanges.length > 0 ? significantChanges.map(change => `- ${change}`).join('\n') : '- 数値的な変化は検出されませんでした'}
 
 ${expressionChanges.length > 0 ? `【表情変化】\n${expressionChanges.map(change => `- ${change}`).join('\n')}` : ''}
+
+${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change => `- ${change}`).join('\n')}` : ''}
 
 【分析条件】
 - 変化があった項目のみを具体的に分析する
