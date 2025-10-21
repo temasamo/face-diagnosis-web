@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     const afterColors = afterRes.imagePropertiesAnnotation?.dominantColors?.colors || [];
 
     // 肌の状態分析関数（シワ・シミ・肌質の評価）
-    const analyzeSkinCondition = (face: any, colors: any[]) => {
+    const analyzeSkinCondition = (face: { panAngle?: number; rollAngle?: number; tiltAngle?: number; joyLikelihood?: string; angerLikelihood?: string }, colors: Array<{ color: { red: number; green: number; blue: number }; score: number }>) => {
       // 肌の明度・彩度から肌質を評価
       const skinTone = colors.length > 0 ? colors[0] : null;
       const brightness = skinTone ? (skinTone.color.red + skinTone.color.green + skinTone.color.blue) / 3 : 0;
