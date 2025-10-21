@@ -107,15 +107,25 @@ export async function POST(req: Request) {
 
     // 肌の状態分析関数（シワ・シミ・肌質の評価）
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const analyzeSkinCondition = (face: any, colors: Array<{ color: { red: number; green: number; blue: number }; score: number }>) => {
+    const analyzeSkinCondition = (face: any, colors: any[]) => {
       // 肌の明度・彩度から肌質を評価
       const skinTone = colors.length > 0 ? colors[0] : null;
-      const brightness = skinTone ? (skinTone.color.red + skinTone.color.green + skinTone.color.blue) / 3 : 0;
-      const saturation = skinTone ? Math.sqrt(
-        Math.pow(skinTone.color.red - brightness, 2) + 
-        Math.pow(skinTone.color.green - brightness, 2) + 
-        Math.pow(skinTone.color.blue - brightness, 2)
-      ) : 0;
+      const brightness = skinTone && skinTone.color && 
+        typeof skinTone.color.red === 'number' && 
+        typeof skinTone.color.green === 'number' && 
+        typeof skinTone.color.blue === 'number' 
+        ? (skinTone.color.red + skinTone.color.green + skinTone.color.blue) / 3 
+        : 0;
+      const saturation = skinTone && skinTone.color && 
+        typeof skinTone.color.red === 'number' && 
+        typeof skinTone.color.green === 'number' && 
+        typeof skinTone.color.blue === 'number' 
+        ? Math.sqrt(
+            Math.pow(skinTone.color.red - brightness, 2) + 
+            Math.pow(skinTone.color.green - brightness, 2) + 
+            Math.pow(skinTone.color.blue - brightness, 2)
+          ) 
+        : 0;
 
       // 顔の角度からシワの見えやすさを評価
       const headTilt = Math.abs(face.panAngle || 0) + Math.abs(face.rollAngle || 0) + Math.abs(face.tiltAngle || 0);
