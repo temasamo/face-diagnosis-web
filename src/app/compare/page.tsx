@@ -505,9 +505,9 @@ export default function ComparePage() {
         <div className="mt-8 text-left bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-xl shadow-lg border border-pink-200">
           <h2 className="text-xl font-bold text-pink-800 mb-4">✨ 美容効果診断結果</h2>
           <div className="bg-white p-4 rounded-lg shadow-sm">
-            <p className="text-gray-800 leading-relaxed text-lg mb-3">
+            <div className="text-gray-800 leading-relaxed text-lg mb-3 whitespace-pre-line">
               {result.comment}
-            </p>
+            </div>
             <div className="text-sm text-pink-600 bg-pink-50 p-3 rounded border-l-4 border-pink-300">
               💡 <strong>美容効果のポイント:</strong> マッサージ、オイル、パック等の施術による肌質改善、リフトアップ効果、シワ・たるみの軽減を分析しています。
             </div>
@@ -657,11 +657,11 @@ export default function ComparePage() {
         <ol className="text-left text-blue-700 space-y-2">
           <li>1. 「Before」と「After」の画像をそれぞれアップロードしてください（📱 スマホ画像は自動でリサイズされます）</li>
           <li>2. 比較モードを選択してください（重ね合わせ or 横並び）</li>
-          <li>3. 重ね合わせモードでは透明度スライダーで調整できます</li>
-          <li>4. 重ね合わせモードでは顔位置自動補正機能が利用できます</li>
+          <li>3. 「🎯 顔位置を自動補正」ボタンで顔の位置・角度・サイズを自動調整できます</li>
+          <li>4. 重ね合わせモードでは透明度スライダーでBefore画像の透明度を調整できます</li>
           <li>5. 画像保存ボタンで撮影した画像をダウンロードできます</li>
           <li>6. 「美容効果を診断する」ボタンで美容施術の効果を分析できます</li>
-          <li>7. マッサージ、オイル、パック等の施術効果を詳細に測定します</li>
+          <li>7. 数値付きの精密測定でマッサージ、オイル、パック等の施術効果を詳細に測定します</li>
         </ol>
       </div>
     </div>

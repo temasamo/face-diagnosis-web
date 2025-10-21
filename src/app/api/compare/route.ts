@@ -270,45 +270,52 @@ export async function POST(req: Request) {
       }
     };
 
-    // OpenAIコメント生成（数値重視の美容効果測定）
+    // 変化があった項目のみを抽出
+    const significantChanges = [];
+    
+    if (diff.measurements.faceWidth.change !== 0) {
+      significantChanges.push(`顔の幅: ${diff.measurements.faceWidth.change}mm ${diff.measurements.faceWidth.change > 0 ? '増加' : '減少'}`);
+    }
+    if (diff.measurements.faceHeight.change !== 0) {
+      significantChanges.push(`顔の長さ: ${diff.measurements.faceHeight.change}mm ${diff.measurements.faceHeight.change > 0 ? '増加' : '減少'}`);
+    }
+    if (diff.measurements.eyeDistance.change !== 0) {
+      significantChanges.push(`目の間隔: ${diff.measurements.eyeDistance.change}mm ${diff.measurements.eyeDistance.change > 0 ? '拡大' : '縮小'}`);
+    }
+    if (diff.measurements.eyebrowToEyeDistance.change !== 0) {
+      significantChanges.push(`眉毛と目の距離: ${diff.measurements.eyebrowToEyeDistance.change}mm ${diff.measurements.eyebrowToEyeDistance.change > 0 ? '拡大' : '縮小'}`);
+    }
+    if (diff.measurements.faceAngle.change !== 0) {
+      significantChanges.push(`フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : '丸み増加'}`);
+    }
+
+    // 表情変化の確認
+    const expressionChanges = [];
+    if (diff.joy !== "変化なし") expressionChanges.push(`喜び: ${diff.joy}`);
+    if (diff.anger !== "変化なし") expressionChanges.push(`怒り: ${diff.anger}`);
+    if (diff.sorrow !== "変化なし") expressionChanges.push(`悲しみ: ${diff.sorrow}`);
+    if (diff.surprise !== "変化なし") expressionChanges.push(`驚き: ${diff.surprise}`);
+
+    // OpenAIコメント生成（変化項目のみに焦点）
     const prompt = `
 あなたは美容・エステ専門のAIカウンセラーです。
-以下の精密な数値測定データのBefore/Afterの差分をもとに、美容効果の変化を具体的な数値とともに日本語で分析してください。
+以下の変化データをもとに、美容効果の変化を具体的な数値とともに日本語で分析してください。
 
-【精密数値測定データ】
-- 顔の幅: ${diff.measurements.faceWidth.change}mm ${diff.measurements.faceWidth.change > 0 ? '増加' : diff.measurements.faceWidth.change < 0 ? '減少' : '変化なし'}
-- 顔の長さ: ${diff.measurements.faceHeight.change}mm ${diff.measurements.faceHeight.change > 0 ? '増加' : diff.measurements.faceHeight.change < 0 ? '減少' : '変化なし'}
-- 目の間隔: ${diff.measurements.eyeDistance.change}mm ${diff.measurements.eyeDistance.change > 0 ? '拡大' : diff.measurements.eyeDistance.change < 0 ? '縮小' : '変化なし'}
-- 眉毛と目の距離: ${diff.measurements.eyebrowToEyeDistance.change}mm ${diff.measurements.eyebrowToEyeDistance.change > 0 ? '拡大' : diff.measurements.eyebrowToEyeDistance.change < 0 ? '縮小' : '変化なし'}
-- フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : diff.measurements.faceAngle.change < 0 ? '丸み増加' : '変化なし'}
+【検出された変化】
+${significantChanges.length > 0 ? significantChanges.map(change => `- ${change}`).join('\n') : '- 数値的な変化は検出されませんでした'}
 
-【表情・角度変化】
-- 顔の角度変化: 左右${diff.headTilt}度、回転${diff.roll}度、上下${diff.tilt}度
-- 表情の変化: ${JSON.stringify({
-    joy: diff.joy,
-    anger: diff.anger,
-    sorrow: diff.sorrow,
-    surprise: diff.surprise
-  }, null, 2)}
+${expressionChanges.length > 0 ? `【表情変化】\n${expressionChanges.map(change => `- ${change}`).join('\n')}` : ''}
 
-【数値重視の美容効果分析】
-以下の観点から具体的な数値とともに物理的変化を分析してください：
-1. 顔の輪郭・立体感（フェイスラインのシャープ化、頬の位置変化）
-2. 目の印象（目の開き、眉毛と目の距離、目の間隔）
-3. 全体的なリフトアップ効果（顔の長さ、幅の変化）
-4. 肌の質感・艶（色調変化から推測）
-5. 若々しさの向上（数値的改善の総合評価）
-
-【出力条件】
-- 必ず具体的な数値（mm、度）を含めて分析する
-- 例：「顔の幅が3mm減少し、フェイスラインが2.5度シャープになっています」
-- 例：「眉毛と目の間が2mm狭くなり、目が大きく見えるようになりました」
-- 例：「ほうれい線や眉間のシワが薄くなり、全体的に若々しさが向上しています」
+【分析条件】
+- 変化があった項目のみを具体的に分析する
+- 変化がない項目は言及しない
+- 必ず具体的な数値（mm、度）を含める
 - 美容・エステ効果の物理的変化に焦点を当てる
 - 専門的だが分かりやすい表現を使用
 - 400文字以内で簡潔に
 - 必ず完全な文章で終了する（途中で切れないように）
 - ポジティブで励ましのトーン
+- 改行を適切に入れて読みやすくする
 - マッサージ、オイル、パック等の美容施術効果を想定した分析
 `;
 
