@@ -124,9 +124,9 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
           </div>
         )}
         
-        {/* 撮影ガイドライン */}
-        <div className="absolute inset-4 border-2 border-white border-dashed rounded-lg pointer-events-none opacity-50">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-40 border border-white rounded-full"></div>
+        {/* 撮影ガイドライン - 顔の枠を大きく */}
+        <div className="absolute inset-2 border-2 border-white border-dashed rounded-lg pointer-events-none opacity-50">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-60 border-2 border-white rounded-full"></div>
         </div>
       </div>
       
@@ -189,7 +189,8 @@ export default function FaceCamera({ onCapture }: { onCapture: (img: string) => 
       <div className="mt-4 text-sm text-gray-600">
         <p>📸 撮影のコツ:</p>
         <ul className="text-left mt-2 space-y-1">
-          <li>• 顔全体が枠内に収まるようにしてください</li>
+          <li>• 顔全体が白い円の枠内に収まるようにしてください</li>
+          <li>• 顔の周りに余白を少なくして、顔を大きく撮影してください</li>
           <li>• 照明を均等に当ててください</li>
           <li>• カメラから適度な距離を保ってください</li>
           <li>• 同じ角度・位置で撮影してください</li>
