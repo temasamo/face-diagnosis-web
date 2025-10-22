@@ -198,8 +198,28 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateFaceAngle = (face: { rollAngle?: number }) => {
-      return Math.abs(face.rollAngle || 0);
+    const calculateFaceAngle = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
+      const landmarks = face.landmarks || [];
+      const leftJaw = landmarks.find((l) => l.type === 'LEFT_OF_LEFT_EYEBROW');
+      const rightJaw = landmarks.find((l) => l.type === 'RIGHT_OF_RIGHT_EYEBROW');
+      const chin = landmarks.find((l) => l.type === 'CHIN_GNATHION');
+      
+      if (leftJaw && rightJaw && chin && leftJaw.position && rightJaw.position && chin.position) {
+        // 顎から頬にかけての角度を計算
+        const leftAngle = Math.atan2(
+          leftJaw.position.y - chin.position.y,
+          leftJaw.position.x - chin.position.x
+        ) * 180 / Math.PI;
+        const rightAngle = Math.atan2(
+          rightJaw.position.y - chin.position.y,
+          rightJaw.position.x - chin.position.x
+        ) * 180 / Math.PI;
+        
+        // 左右の角度の平均を返す（小さい角度 = よりシャープ）
+        // 美容業界では、角度が小さいほどシャープなフェイスライン
+        return Math.abs((leftAngle + rightAngle) / 2);
+      }
+      return 0;
     };
 
     // 数値計算
@@ -351,12 +371,40 @@ export async function POST(req: Request) {
       significantChanges.push(`フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : '丸み増加'}`);
     }
 
-    // 表情変化の確認
+    // 表情変化の確認（内面的な自信や精神状態の反映）
     const expressionChanges = [];
-    if (diff.joy !== "変化なし") expressionChanges.push(`喜び: ${diff.joy}`);
-    if (diff.anger !== "変化なし") expressionChanges.push(`怒り: ${diff.anger}`);
-    if (diff.sorrow !== "変化なし") expressionChanges.push(`悲しみ: ${diff.sorrow}`);
-    if (diff.surprise !== "変化なし") expressionChanges.push(`驚き: ${diff.surprise}`);
+    if (diff.joy !== "変化なし") {
+      const joyChange = diff.joy.split(' → ');
+      if (joyChange[1] === 'VERY_LIKELY' || joyChange[1] === 'LIKELY') {
+        expressionChanges.push(`明るい表情: より自然で自信に満ちた笑顔に変化`);
+      } else if (joyChange[0] === 'VERY_LIKELY' || joyChange[0] === 'LIKELY') {
+        expressionChanges.push(`明るい表情: より落ち着いた表情に変化`);
+      }
+    }
+    if (diff.anger !== "変化なし") {
+      const angerChange = diff.anger.split(' → ');
+      if (angerChange[1] === 'UNLIKELY' || angerChange[1] === 'VERY_UNLIKELY') {
+        expressionChanges.push(`穏やかな表情: より落ち着いた穏やかな表情に改善`);
+      } else if (angerChange[0] === 'UNLIKELY' || angerChange[0] === 'VERY_UNLIKELY') {
+        expressionChanges.push(`表情の変化: より緊張した表情に変化`);
+      }
+    }
+    if (diff.sorrow !== "変化なし") {
+      const sorrowChange = diff.sorrow.split(' → ');
+      if (sorrowChange[1] === 'UNLIKELY' || sorrowChange[1] === 'VERY_UNLIKELY') {
+        expressionChanges.push(`明るい表情: より前向きで明るい表情に改善`);
+      } else if (sorrowChange[0] === 'UNLIKELY' || sorrowChange[0] === 'VERY_UNLIKELY') {
+        expressionChanges.push(`表情の変化: より憂鬱な表情に変化`);
+      }
+    }
+    if (diff.surprise !== "変化なし") {
+      const surpriseChange = diff.surprise.split(' → ');
+      if (surpriseChange[1] === 'VERY_LIKELY' || surpriseChange[1] === 'LIKELY') {
+        expressionChanges.push(`生き生きとした表情: より活発で生き生きとした表情に変化`);
+      } else if (surpriseChange[0] === 'VERY_LIKELY' || surpriseChange[0] === 'LIKELY') {
+        expressionChanges.push(`表情の変化: より落ち着いた表情に変化`);
+      }
+    }
 
     // 肌の状態変化の確認
     const skinChanges = [];
@@ -387,7 +435,7 @@ export async function POST(req: Request) {
 【検出された変化】
 ${significantChanges.length > 0 ? significantChanges.map(change => `- ${change}`).join('\n') : '- 数値的な変化は検出されませんでした'}
 
-${expressionChanges.length > 0 ? `【表情変化】\n${expressionChanges.map(change => `- ${change}`).join('\n')}` : ''}
+${expressionChanges.length > 0 ? `【内面的な変化（表情・精神状態）】\n${expressionChanges.map(change => `- ${change}`).join('\n')}` : ''}
 
 ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change => `- ${change}`).join('\n')}` : ''}
 
