@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+
+const FaceMeshViewer = dynamic(() => import("./FaceMeshViewer"), {
+  ssr: false,
+  loading: () => <div className="text-center py-8">MediaPipe FaceMeshを読み込み中...</div>
+});
 
 export default function ComparePage() {
   const [before, setBefore] = useState<string | null>(null);
@@ -958,6 +964,20 @@ export default function ComparePage() {
           <li>7. 数値付きの精密測定でマッサージ、オイル、パック等の施術効果を詳細に測定します</li>
         </ol>
       </div>
+
+      {/* === 新規: MediaPipe FaceMesh追加 === */}
+      <section id="facemesh-section" className="mt-8 border-t pt-4">
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+          🔬 リアルタイム フェイスライン解析（MediaPipe FaceMesh）
+        </h2>
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+          <p className="text-sm text-gray-600 mb-4">
+            カメラを使用してリアルタイムで顔のランドマークを検出・描画します。
+            将来的にVision APIからFaceMeshへの切り替えを想定した技術検証です。
+          </p>
+          <FaceMeshViewer />
+        </div>
+      </section>
     </div>
   );
 }
