@@ -588,8 +588,8 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">顔の長さ</span>
                     <span className={`text-sm font-bold ${
-                      result.diff.measurements.faceHeight.change > 0 ? 'text-green-600' : 
-                      result.diff.measurements.faceHeight.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.diff.measurements.faceHeight.change < 0 ? 'text-green-600' : 
+                      result.diff.measurements.faceHeight.change > 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
                       {result.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.diff.measurements.faceHeight.change}mm
                     </span>
@@ -732,7 +732,10 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">検出信頼度</span>
-                    <span className="text-sm font-bold text-blue-600">
+                    <span className={`text-sm font-bold ${
+                      result.diff.detectionConfidence.after > result.diff.detectionConfidence.before ? 'text-green-600' : 
+                      result.diff.detectionConfidence.after < result.diff.detectionConfidence.before ? 'text-red-600' : 'text-gray-600'
+                    }`}>
                       {((result.diff.detectionConfidence.after - result.diff.detectionConfidence.before) * 100).toFixed(1)}%
                     </span>
                   </div>

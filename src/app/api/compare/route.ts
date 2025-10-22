@@ -251,6 +251,7 @@ export async function POST(req: Request) {
     const beforeFaceAngle = calculateFaceAngle(beforeFace as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const afterFaceAngle = calculateFaceAngle(afterFace as any);
+    // 美容業界では角度が小さくなる=シャープなので、after - before で計算
     const faceAngleChange = Math.round((afterFaceAngle - beforeFaceAngle) * 10) / 10; // 小数点1桁まで
     
     const diff = {
