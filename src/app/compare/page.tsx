@@ -112,7 +112,13 @@ export default function ComparePage() {
           change: number;
           unit: string;
         };
-        faceAngle: {
+        faceLiftAngle: {
+          before: number;
+          after: number;
+          change: number;
+          unit: string;
+        };
+        lowerFaceRatio: {
           before: number;
           after: number;
           change: number;
@@ -151,6 +157,7 @@ export default function ComparePage() {
       };
     };
     comment?: string;
+    faceLiftIndex?: number;
     faceCount?: { before: number; after: number };
     message?: string;
   } | null>(null);
@@ -695,37 +702,89 @@ export default function ComparePage() {
                   <div className="text-xs text-center text-blue-600 font-medium">眉毛から目まで</div>
                 </div>
 
-                {/* フェイスライン角度 */}
+
+                {/* フェイスリフト角度 */}
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">フェイスライン角度</span>
+                    <span className="text-sm font-semibold text-gray-700">フェイスリフト角度</span>
                     <span className={`text-sm font-bold ${
-                      result.diff.measurements.faceAngle.change > 0 ? 'text-green-600' : 
-                      result.diff.measurements.faceAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.diff.measurements.faceLiftAngle.change > 0 ? 'text-green-600' : 
+                      result.diff.measurements.faceLiftAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.diff.measurements.faceAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceAngle.change}度
+                      {result.diff.measurements.faceLiftAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceLiftAngle.change}度
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.diff.measurements.faceAngle.before} → {result.diff.measurements.faceAngle.after}
+                    {result.diff.measurements.faceLiftAngle.before.toFixed(1)} → {result.diff.measurements.faceLiftAngle.after.toFixed(1)}
                   </div>
-                  {/* フェイスライン角度の図解（ズームアップ） */}
+                  {/* フェイスリフト角度の図解 */}
                   <div className="flex justify-center mb-2">
                     <div className="relative w-24 h-16">
                       {/* 背景 */}
                       <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-gray-300"></div>
-                      {/* 顎から頬のライン（ズームアップ） */}
-                      <div className="absolute bottom-2 left-2 right-2 h-2 bg-blue-600 rounded-full transform rotate-12 origin-left"></div>
-                      <div className="absolute bottom-2 left-2 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
-                      <div className="absolute bottom-2 right-2 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
-                      {/* 基準線（水平） */}
-                      <div className="absolute bottom-2 left-2 right-2 h-1 bg-gray-400 rounded-full"></div>
-                      {/* 角度の弧 */}
-                      <div className="absolute bottom-1 left-1/2 w-4 h-4 border-2 border-blue-600 rounded-full transform -translate-x-2 -translate-y-1" 
+                      {/* 目尻 */}
+                      <div className="absolute top-2 left-2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                      {/* 口角 */}
+                      <div className="absolute top-8 left-1/2 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 顎先 */}
+                      <div className="absolute bottom-2 left-1/2 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 角度線 */}
+                      <div className="absolute top-2 left-2 w-8 h-8 border-2 border-blue-600 rounded-full transform -translate-x-1 -translate-y-1" 
                            style={{clipPath: 'polygon(50% 50%, 0% 0%, 100% 0%)'}}></div>
                     </div>
                   </div>
-                  <div className="text-xs text-center text-blue-600 font-medium">顎から頬にかけての角度</div>
+                  <div className="text-xs text-center text-blue-600 font-medium">目尻→口角→顎先の角度</div>
+                </div>
+
+                {/* 下顔面比率 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">下顔面比率</span>
+                    <span className={`text-sm font-bold ${
+                      result.diff.measurements.lowerFaceRatio.change > 0 ? 'text-green-600' : 
+                      result.diff.measurements.lowerFaceRatio.change < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {result.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    {(result.diff.measurements.lowerFaceRatio.before * 100).toFixed(1)}% → {(result.diff.measurements.lowerFaceRatio.after * 100).toFixed(1)}%
+                  </div>
+                  {/* 下顔面比率の図解 */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-24 h-16">
+                      {/* 背景 */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-gray-300"></div>
+                      {/* 鼻下 */}
+                      <div className="absolute top-2 left-1/2 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 口角 */}
+                      <div className="absolute top-8 left-1/2 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 顎先 */}
+                      <div className="absolute bottom-2 left-1/2 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 比率線 */}
+                      <div className="absolute top-2 left-1/2 w-1 h-6 bg-blue-600 transform -translate-x-0.5"></div>
+                      <div className="absolute top-8 left-1/2 w-1 h-4 bg-blue-600 transform -translate-x-0.5"></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">鼻下→口角→顎先の比率</div>
+                </div>
+
+                {/* AI総合判定 */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-purple-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">AI総合判定</span>
+                    <span className={`text-sm font-bold ${
+                      (result.faceLiftIndex ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {(result.faceLiftIndex ?? 0) > 0 ? 'リフトアップ傾向' : 'たるみ傾向'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    フェイスリフト指数: {result.faceLiftIndex ?? 0}
+                  </div>
+                  <div className="text-xs text-purple-600 font-medium">
+                    {(result.faceLiftIndex ?? 0) > 0 ? '頬の位置が上がり、フェイスラインがすっきり' : '頬のたるみが改善の余地あり'}
+                  </div>
                 </div>
 
                 {/* 検出信頼度 */}

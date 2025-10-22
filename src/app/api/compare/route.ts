@@ -198,26 +198,53 @@ export async function POST(req: Request) {
       return 0;
     };
 
-    const calculateFaceAngle = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
+    // 削除: 既存のフェイスライン角度計算（機能していないため）
+
+    // 新指標: フェイスリフト角度（目尻-口角-顎先）
+    const calculateFaceLiftAngle = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
-      const leftJaw = landmarks.find((l) => l.type === 'LEFT_OF_LEFT_EYEBROW');
-      const rightJaw = landmarks.find((l) => l.type === 'RIGHT_OF_RIGHT_EYEBROW');
+      const eyeCorner = landmarks.find((l) => l.type === 'LEFT_EYE_OUTER_CORNER');
+      const mouthCorner = landmarks.find((l) => l.type === 'MOUTH_LEFT');
       const chin = landmarks.find((l) => l.type === 'CHIN_GNATHION');
       
-      if (leftJaw && rightJaw && chin && leftJaw.position && rightJaw.position && chin.position) {
-        // 顎から頬にかけての角度を計算
-        const leftAngle = Math.atan2(
-          leftJaw.position.y - chin.position.y,
-          leftJaw.position.x - chin.position.x
-        ) * 180 / Math.PI;
-        const rightAngle = Math.atan2(
-          rightJaw.position.y - chin.position.y,
-          rightJaw.position.x - chin.position.x
-        ) * 180 / Math.PI;
+      if (eyeCorner && mouthCorner && chin && eyeCorner.position && mouthCorner.position && chin.position) {
+        // 3点間の角度を計算
+        const a = eyeCorner.position;
+        const b = mouthCorner.position;
+        const c = chin.position;
         
-        // 左右の角度の平均を返す（小さい角度 = よりシャープ）
-        // 美容業界では、角度が小さいほどシャープなフェイスライン
-        return Math.abs((leftAngle + rightAngle) / 2);
+        const ab = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+        const bc = Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2);
+        const ac = Math.sqrt((c.x - a.x) ** 2 + (c.y - a.y) ** 2);
+        
+        if (ab > 0 && bc > 0 && ac > 0) {
+          const angle = Math.acos((ab ** 2 + bc ** 2 - ac ** 2) / (2 * ab * bc)) * (180 / Math.PI);
+          return angle;
+        }
+      }
+      return 0;
+    };
+
+    // 新指標: 下顔面比率（鼻下-口角-顎先）
+    const calculateLowerFaceRatio = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
+      const landmarks = face.landmarks || [];
+      const noseBottom = landmarks.find((l) => l.type === 'NOSE_BOTTOM_CENTER');
+      const mouthCorner = landmarks.find((l) => l.type === 'MOUTH_LEFT');
+      const chin = landmarks.find((l) => l.type === 'CHIN_GNATHION');
+      
+      if (noseBottom && mouthCorner && chin && noseBottom.position && mouthCorner.position && chin.position) {
+        const noseToMouth = Math.sqrt(
+          (mouthCorner.position.x - noseBottom.position.x) ** 2 + 
+          (mouthCorner.position.y - noseBottom.position.y) ** 2
+        );
+        const noseToChin = Math.sqrt(
+          (chin.position.x - noseBottom.position.x) ** 2 + 
+          (chin.position.y - noseBottom.position.y) ** 2
+        );
+        
+        if (noseToChin > 0) {
+          return noseToMouth / noseToChin;
+        }
       }
       return 0;
     };
@@ -247,12 +274,24 @@ export async function POST(req: Request) {
     const afterEyebrowToEye = calculateEyebrowToEyeDistance(afterFace as any);
     const eyebrowToEyeChange = Math.round((afterEyebrowToEye - beforeEyebrowToEye) * 0.1);
 
+    // 削除: 既存のフェイスライン角度計算
+
+    // 新指標: フェイスリフト角度の計算
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const beforeFaceAngle = calculateFaceAngle(beforeFace as any);
+    const beforeFaceLiftAngle = calculateFaceLiftAngle(beforeFace as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const afterFaceAngle = calculateFaceAngle(afterFace as any);
-    // 美容業界では角度が小さくなる=シャープなので、after - before で計算
-    const faceAngleChange = Math.round((afterFaceAngle - beforeFaceAngle) * 10) / 10; // 小数点1桁まで
+    const afterFaceLiftAngle = calculateFaceLiftAngle(afterFace as any);
+    const faceLiftAngleChange = Math.round((afterFaceLiftAngle - beforeFaceLiftAngle) * 10) / 10;
+
+    // 新指標: 下顔面比率の計算
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const beforeLowerFaceRatio = calculateLowerFaceRatio(beforeFace as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const afterLowerFaceRatio = calculateLowerFaceRatio(afterFace as any);
+    const lowerFaceRatioChange = Math.round((afterLowerFaceRatio - beforeLowerFaceRatio) * 1000) / 1000; // 小数点3桁まで
+
+    // フェイスリフト指数の計算（内部スコア）
+    const faceLiftIndex = (faceLiftAngleChange * 0.6) + ((-lowerFaceRatioChange * 100) * 0.4);
     
     const diff = {
       // 表情の変化
@@ -296,11 +335,17 @@ export async function POST(req: Request) {
           change: eyebrowToEyeChange,
           unit: "mm"
         },
-        faceAngle: {
-          before: beforeFaceAngle,
-          after: afterFaceAngle,
-          change: faceAngleChange,
+        faceLiftAngle: {
+          before: beforeFaceLiftAngle,
+          after: afterFaceLiftAngle,
+          change: faceLiftAngleChange,
           unit: "度"
+        },
+        lowerFaceRatio: {
+          before: beforeLowerFaceRatio,
+          after: afterLowerFaceRatio,
+          change: lowerFaceRatioChange,
+          unit: "比率"
         }
       },
       
@@ -368,8 +413,13 @@ export async function POST(req: Request) {
     if (diff.measurements.eyebrowToEyeDistance.change !== 0) {
       significantChanges.push(`眉毛と目の距離: ${diff.measurements.eyebrowToEyeDistance.change}mm ${diff.measurements.eyebrowToEyeDistance.change > 0 ? '拡大' : '縮小'}`);
     }
-    if (diff.measurements.faceAngle.change !== 0) {
-      significantChanges.push(`フェイスライン角度: ${diff.measurements.faceAngle.change}度 ${diff.measurements.faceAngle.change > 0 ? 'シャープ化' : '丸み増加'}`);
+    // 新指標: フェイスリフト角度
+    if (diff.measurements.faceLiftAngle.change !== 0) {
+      significantChanges.push(`フェイスリフト角度: ${diff.measurements.faceLiftAngle.change}度 ${diff.measurements.faceLiftAngle.change > 0 ? 'リフトアップ' : 'たるみ'}`);
+    }
+    // 新指標: 下顔面比率
+    if (diff.measurements.lowerFaceRatio.change !== 0) {
+      significantChanges.push(`下顔面比率: ${(diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}% ${diff.measurements.lowerFaceRatio.change < 0 ? 'リフトアップ' : 'たるみ'}`);
     }
 
     // 表情変化の確認（内面的な自信や精神状態の反映）
@@ -466,6 +516,7 @@ ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change =
       success: true,
       diff,
       comment,
+      faceLiftIndex: Math.round(faceLiftIndex * 10) / 10, // 小数点1桁まで
       faceCount: {
         before: beforeFaces.length,
         after: afterFaces.length
