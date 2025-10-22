@@ -559,9 +559,28 @@ export default function ComparePage() {
                       {result.diff.measurements.faceWidth.change > 0 ? '+' : ''}{result.diff.measurements.faceWidth.change}mm
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceWidth.before} → {result.diff.measurements.faceWidth.after}
                   </div>
+                  {/* 顔の幅の図解 */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-20 h-24">
+                      {/* 顔の輪郭（より詳細） */}
+                      <div className="absolute inset-0 border-2 border-gray-500 rounded-full bg-gradient-to-b from-amber-50 to-amber-100"></div>
+                      {/* 目 */}
+                      <div className="absolute top-7 left-4 w-2 h-1 bg-gray-600 rounded-full"></div>
+                      <div className="absolute top-7 right-4 w-2 h-1 bg-gray-600 rounded-full"></div>
+                      {/* 鼻 */}
+                      <div className="absolute top-9 left-1/2 w-1 h-1 bg-gray-500 rounded-full transform -translate-x-0.5"></div>
+                      {/* 口 */}
+                      <div className="absolute top-11 left-1/2 w-2 h-0.5 bg-gray-600 rounded-full transform -translate-x-1"></div>
+                      {/* 水平の矢印（顔の幅） */}
+                      <div className="absolute top-1/2 left-1 right-1 h-1 bg-blue-600 rounded-full"></div>
+                      <div className="absolute top-1/2 left-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                      <div className="absolute top-1/2 right-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">左右の端から端まで</div>
                 </div>
 
                 {/* 顔の長さ */}
@@ -575,9 +594,28 @@ export default function ComparePage() {
                       {result.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.diff.measurements.faceHeight.change}mm
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceHeight.before} → {result.diff.measurements.faceHeight.after}
                   </div>
+                  {/* 顔の長さの図解 */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-20 h-24">
+                      {/* 顔の輪郭（より詳細） */}
+                      <div className="absolute inset-0 border-2 border-gray-500 rounded-full bg-gradient-to-b from-amber-50 to-amber-100"></div>
+                      {/* 目 */}
+                      <div className="absolute top-7 left-4 w-2 h-1 bg-gray-600 rounded-full"></div>
+                      <div className="absolute top-7 right-4 w-2 h-1 bg-gray-600 rounded-full"></div>
+                      {/* 鼻 */}
+                      <div className="absolute top-9 left-1/2 w-1 h-1 bg-gray-500 rounded-full transform -translate-x-0.5"></div>
+                      {/* 口 */}
+                      <div className="absolute top-11 left-1/2 w-2 h-0.5 bg-gray-600 rounded-full transform -translate-x-1"></div>
+                      {/* 垂直の矢印（顔の長さ） */}
+                      <div className="absolute left-1/2 top-1 bottom-1 w-1 bg-blue-600 rounded-full transform -translate-x-0.5"></div>
+                      <div className="absolute left-1/2 top-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      <div className="absolute left-1/2 bottom-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">額から顎まで</div>
                 </div>
 
                 {/* 目の間隔 */}
@@ -591,9 +629,31 @@ export default function ComparePage() {
                       {result.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyeDistance.change}mm
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.eyeDistance.before} → {result.diff.measurements.eyeDistance.after}
                   </div>
+                  {/* 目の間隔の図解（ズームアップ） */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-24 h-16">
+                      {/* 背景 */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg border border-gray-300"></div>
+                      {/* 左目（ズームアップ） */}
+                      <div className="absolute top-2 left-2 w-6 h-4 bg-gray-700 rounded-full">
+                        <div className="absolute top-1 left-1 w-2 h-2 bg-white rounded-full"></div>
+                        <div className="absolute top-2 left-2 w-1 h-1 bg-gray-900 rounded-full"></div>
+                      </div>
+                      {/* 右目（ズームアップ） */}
+                      <div className="absolute top-2 right-2 w-6 h-4 bg-gray-700 rounded-full">
+                        <div className="absolute top-1 left-1 w-2 h-2 bg-white rounded-full"></div>
+                        <div className="absolute top-2 left-2 w-1 h-1 bg-gray-900 rounded-full"></div>
+                      </div>
+                      {/* 目の間隔の矢印（ズームアップ） */}
+                      <div className="absolute top-4 left-8 right-8 h-1.5 bg-blue-600 rounded-full"></div>
+                      <div className="absolute top-4 left-7 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                      <div className="absolute top-4 right-7 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">左右の目の中心間</div>
                 </div>
 
                 {/* 眉毛と目の距離 */}
@@ -607,9 +667,32 @@ export default function ComparePage() {
                       {result.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyebrowToEyeDistance.change}mm
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.eyebrowToEyeDistance.before} → {result.diff.measurements.eyebrowToEyeDistance.after}
                   </div>
+                  {/* 眉毛と目の距離の図解（ズームアップ） */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-20 h-20">
+                      {/* 背景 */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-amber-50 to-amber-100 rounded-lg border border-gray-300"></div>
+                      {/* 眉毛（ズームアップ） */}
+                      <div className="absolute top-2 left-2 right-2 h-2 bg-gray-600 rounded-full"></div>
+                      {/* 目（ズームアップ） */}
+                      <div className="absolute top-8 left-4 w-6 h-4 bg-gray-700 rounded-full">
+                        <div className="absolute top-1 left-1 w-2 h-2 bg-white rounded-full"></div>
+                        <div className="absolute top-2 left-2 w-1 h-1 bg-gray-900 rounded-full"></div>
+                      </div>
+                      <div className="absolute top-8 right-4 w-6 h-4 bg-gray-700 rounded-full">
+                        <div className="absolute top-1 left-1 w-2 h-2 bg-white rounded-full"></div>
+                        <div className="absolute top-2 left-2 w-1 h-1 bg-gray-900 rounded-full"></div>
+                      </div>
+                      {/* 眉毛と目の距離の矢印（ズームアップ） */}
+                      <div className="absolute left-1/2 top-4 bottom-8 w-1.5 bg-blue-600 rounded-full transform -translate-x-0.5"></div>
+                      <div className="absolute left-1/2 top-3 w-3 h-3 bg-blue-600 rounded-full transform -translate-x-1.5"></div>
+                      <div className="absolute left-1/2 top-8 w-3 h-3 bg-blue-600 rounded-full transform -translate-x-1.5"></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">眉毛から目まで</div>
                 </div>
 
                 {/* フェイスライン角度 */}
@@ -623,9 +706,26 @@ export default function ComparePage() {
                       {result.diff.measurements.faceAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceAngle.change}度
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceAngle.before} → {result.diff.measurements.faceAngle.after}
                   </div>
+                  {/* フェイスライン角度の図解（ズームアップ） */}
+                  <div className="flex justify-center mb-2">
+                    <div className="relative w-24 h-16">
+                      {/* 背景 */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-gray-300"></div>
+                      {/* 顎から頬のライン（ズームアップ） */}
+                      <div className="absolute bottom-2 left-2 right-2 h-2 bg-blue-600 rounded-full transform rotate-12 origin-left"></div>
+                      <div className="absolute bottom-2 left-2 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                      <div className="absolute bottom-2 right-2 w-3 h-3 bg-blue-600 rounded-full transform -translate-y-1"></div>
+                      {/* 基準線（水平） */}
+                      <div className="absolute bottom-2 left-2 right-2 h-1 bg-gray-400 rounded-full"></div>
+                      {/* 角度の弧 */}
+                      <div className="absolute bottom-1 left-1/2 w-4 h-4 border-2 border-blue-600 rounded-full transform -translate-x-2 -translate-y-1" 
+                           style={{clipPath: 'polygon(50% 50%, 0% 0%, 100% 0%)'}}></div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center text-blue-600 font-medium">顎から頬にかけての角度</div>
                 </div>
 
                 {/* 検出信頼度 */}
