@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import vision from "@google-cloud/vision";
 import OpenAI from "openai";
-// FaceMeshはブラウザサイド専用のため、APIでは無効化
 
 // Google Cloud Vision API クライアント初期化
 const visionClient = new vision.ImageAnnotatorClient({
@@ -34,24 +33,28 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    const { before, after } = await req.json();
+    const { before, after, faceMesh } = await req.json();
     
     if (!before || !after) {
       return NextResponse.json({ error: "画像が不足しています。" }, { status: 400 });
     }
 
-    // Vision API処理（既存機能を維持）
+    // ✅ Vision API実行（既存処理）
     console.log("Vision API処理開始");
     const visionResult = await processVisionAPI(before, after);
     console.log("Vision API処理完了");
 
-    // 結果を返却（FaceMeshはブラウザサイドで処理）
+    // ✅ 結果統合
     return NextResponse.json({
       success: true,
-      visionResult,
-      faceMeshResult: { 
-        message: "FaceMesh処理はブラウザサイドで実行されます",
-        status: "pending"
+      vision: visionResult,
+      faceMesh,
+      diff: {
+        detectionConfidence: {
+          before: faceMesh.before.detectionConfidence,
+          after: faceMesh.after.detectionConfidence,
+        },
+        landmarksDiff: faceMesh.after.landmarks - faceMesh.before.landmarks,
       },
     });
   } catch (error: unknown) {

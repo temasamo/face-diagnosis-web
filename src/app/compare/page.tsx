@@ -3,16 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { runFaceMesh } from "@/utils/faceMeshClient";
 
 const FaceMeshViewer = dynamic(() => import("./FaceMeshViewer"), {
   ssr: false,
   loading: () => <div className="text-center py-8">MediaPipe FaceMeshを読み込み中...</div>
 });
 
-const FaceMeshProcessor = dynamic(() => import("@/components/FaceMeshProcessor"), {
-  ssr: false,
-  loading: () => <div className="text-center py-4">FaceMesh処理を準備中...</div>
-});
+// FaceMesh処理はブラウザ側で実行されます
 
 export default function ComparePage() {
   const [before, setBefore] = useState<string | null>(null);
@@ -86,7 +84,7 @@ export default function ComparePage() {
   } | null>(null);
   const [result, setResult] = useState<{
     success: boolean;
-    visionResult?: {
+    vision?: {
       success: boolean;
       diff?: {
         joy: string;
@@ -174,20 +172,27 @@ export default function ComparePage() {
       faceCount?: { before: number; after: number };
       message?: string;
     };
-    faceMeshResult?: {
-      faceLiftAngle?: { before: number; after: number; diff: number };
-      lowerFaceRatio?: { before: number; after: number; diff: number };
-      aiSummary?: {
-        trend: string;
-        liftScore: number;
-        comment: string;
+    faceMesh?: {
+      before?: {
+        success: boolean;
+        detectionConfidence: number;
+        landmarks: number;
       };
-      error?: string;
-      message?: string;
-      status?: string;
+      after?: {
+        success: boolean;
+        detectionConfidence: number;
+        landmarks: number;
+      };
+    };
+    diff?: {
+      detectionConfidence: {
+        before: number;
+        after: number;
+      };
+      landmarksDiff: number;
     };
   } | null>(null);
-  const [faceMeshResult, setFaceMeshResult] = useState<any>(null);
+  // FaceMesh結果はresult.faceMeshに格納されます
 
   // 顔位置自動補正関数
   const alignFaces = async () => {
@@ -279,17 +284,29 @@ export default function ComparePage() {
     setResult(null);
 
     try {
+      // ✅ Step1: FaceMeshをブラウザ側で実行
+      console.log("FaceMesh解析開始...");
+      const faceBefore = await runFaceMesh(before);
+      const faceAfter = await runFaceMesh(after);
+      console.log("FaceMesh解析完了:", { faceBefore, faceAfter });
+
+      // ✅ Step2: Vision APIをサーバーで実行
       const res = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ before, after }),
+        body: JSON.stringify({ 
+          before, 
+          after, 
+          faceMesh: { before: faceBefore, after: faceAfter } 
+        }),
       });
       const data = await res.json();
       setResult(data);
-    } catch {
+    } catch (error) {
+      console.error("解析エラー:", error);
       setResult({
         success: false,
-        message: "通信エラーが発生しました。"
+        error: "通信エラーが発生しました。"
       });
     } finally {
       setLoading(false);
@@ -298,19 +315,7 @@ export default function ComparePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 text-center">
-      {/* FaceMesh処理コンポーネント（一時的に無効化） */}
-      {false && before && after && typeof window !== 'undefined' && (
-        <FaceMeshProcessor
-          beforeImage={before}
-          afterImage={after}
-          onResult={(result) => {
-            setFaceMeshResult(result);
-            if (result.error) {
-              console.error("FaceMesh処理エラー:", result.error);
-            }
-          }}
-        />
-      )}
+      {/* FaceMesh処理はブラウザ側で実行されます */}
       <h1 className="text-2xl font-bold mb-6">Before / After 比較診断</h1>
       <p className="text-gray-600 mb-8">
         2枚の写真をアップロードすると、重ね合わせまたは横並びで比較できます。AIが顔の印象変化を分析します。
@@ -578,12 +583,12 @@ export default function ComparePage() {
       )}
 
       {/* 美容効果診断結果表示 */}
-      {result && result.visionResult && result.visionResult.success && (
+      {result && result.vision && result.vision.success && (
         <div className="mt-8 text-left bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-xl shadow-lg border border-pink-200">
           <h2 className="text-xl font-bold text-pink-800 mb-4">✨ 美容効果診断結果（Vision API）</h2>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="text-gray-800 leading-relaxed text-lg mb-3 whitespace-pre-line">
-              {result.visionResult.comment}
+              {result.vision.comment}
             </div>
             <div className="text-sm text-pink-600 bg-pink-50 p-3 rounded border-l-4 border-pink-300">
               💡 <strong>美容効果のポイント:</strong> マッサージ、オイル、パック等の施術による肌質改善、リフトアップ効果、シワ・たるみの軽減を分析しています。
@@ -591,7 +596,7 @@ export default function ComparePage() {
           </div>
 
           {/* 精密数値測定結果 */}
-          {result.visionResult.diff?.measurements && (
+          {result.vision.diff?.measurements && (
             <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-bold text-blue-800 mb-3">📏 精密数値測定結果</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -600,15 +605,15 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">顔の幅</span>
                     <span className={`text-sm font-bold ${
-                      (result.visionResult?.diff?.measurements?.faceWidth?.change || 0) < 0 ? 'text-green-600' : 
-                      (result.visionResult?.diff?.measurements?.faceWidth?.change || 0) > 0 ? 'text-red-600' : 'text-gray-600'
+                      (result.vision?.diff?.measurements?.faceWidth?.change || 0) < 0 ? 'text-green-600' : 
+                      (result.vision?.diff?.measurements?.faceWidth?.change || 0) > 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {(result.visionResult?.diff?.measurements?.faceWidth?.change || 0) > 0 ? '+' : ''}{result.visionResult?.diff?.measurements?.faceWidth?.change || 0}mm
+                      {(result.vision?.diff?.measurements?.faceWidth?.change || 0) > 0 ? '+' : ''}{result.vision?.diff?.measurements?.faceWidth?.change || 0}mm
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.visionResult?.diff?.measurements?.faceWidth ? 
-                      `${result.visionResult.diff.measurements.faceWidth.before} → ${result.visionResult.diff.measurements.faceWidth.after}` :
+                    {result.vision?.diff?.measurements?.faceWidth ? 
+                      `${result.vision.diff.measurements.faceWidth.before} → ${result.vision.diff.measurements.faceWidth.after}` :
                       'データなし'
                     }
                   </div>
@@ -638,14 +643,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">顔の長さ</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.measurements.faceHeight.change < 0 ? 'text-green-600' : 
-                      result.visionResult.diff.measurements.faceHeight.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.measurements.faceHeight.change < 0 ? 'text-green-600' : 
+                      result.vision.diff.measurements.faceHeight.change > 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.visionResult.diff.measurements.faceHeight.change}mm
+                      {result.vision.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.vision.diff.measurements.faceHeight.change}mm
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.visionResult.diff.measurements.faceHeight.before} → {result.visionResult.diff.measurements.faceHeight.after}
+                    {result.vision.diff.measurements.faceHeight.before} → {result.vision.diff.measurements.faceHeight.after}
                   </div>
                   {/* 顔の長さの図解 */}
                   <div className="flex justify-center mb-2">
@@ -673,14 +678,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">目の間隔</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.measurements.eyeDistance.change > 0 ? 'text-green-600' : 
-                      result.visionResult.diff.measurements.eyeDistance.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.measurements.eyeDistance.change > 0 ? 'text-green-600' : 
+                      result.vision.diff.measurements.eyeDistance.change < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.visionResult.diff.measurements.eyeDistance.change}mm
+                      {result.vision.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.vision.diff.measurements.eyeDistance.change}mm
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.visionResult.diff.measurements.eyeDistance.before} → {result.visionResult.diff.measurements.eyeDistance.after}
+                    {result.vision.diff.measurements.eyeDistance.before} → {result.vision.diff.measurements.eyeDistance.after}
                   </div>
                   {/* 目の間隔の図解（ズームアップ） */}
                   <div className="flex justify-center mb-2">
@@ -711,14 +716,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">眉毛と目の距離</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.measurements.eyebrowToEyeDistance.change < 0 ? 'text-green-600' : 
-                      result.visionResult.diff.measurements.eyebrowToEyeDistance.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.measurements.eyebrowToEyeDistance.change < 0 ? 'text-green-600' : 
+                      result.vision.diff.measurements.eyebrowToEyeDistance.change > 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.visionResult.diff.measurements.eyebrowToEyeDistance.change}mm
+                      {result.vision.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.vision.diff.measurements.eyebrowToEyeDistance.change}mm
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.visionResult.diff.measurements.eyebrowToEyeDistance.before} → {result.visionResult.diff.measurements.eyebrowToEyeDistance.after}
+                    {result.vision.diff.measurements.eyebrowToEyeDistance.before} → {result.vision.diff.measurements.eyebrowToEyeDistance.after}
                   </div>
                   {/* 眉毛と目の距離の図解（ズームアップ） */}
                   <div className="flex justify-center mb-2">
@@ -751,14 +756,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">フェイスリフト角度</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.measurements.faceLiftAngle.change > 0 ? 'text-green-600' : 
-                      result.visionResult.diff.measurements.faceLiftAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.measurements.faceLiftAngle.change > 0 ? 'text-green-600' : 
+                      result.vision.diff.measurements.faceLiftAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.measurements.faceLiftAngle.change > 0 ? '+' : ''}{result.visionResult.diff.measurements.faceLiftAngle.change}度
+                      {result.vision.diff.measurements.faceLiftAngle.change > 0 ? '+' : ''}{result.vision.diff.measurements.faceLiftAngle.change}度
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {result.visionResult.diff.measurements.faceLiftAngle.before.toFixed(1)} → {result.visionResult.diff.measurements.faceLiftAngle.after.toFixed(1)}
+                    {result.vision.diff.measurements.faceLiftAngle.before.toFixed(1)} → {result.vision.diff.measurements.faceLiftAngle.after.toFixed(1)}
                   </div>
                   {/* フェイスリフト角度の図解 */}
                   <div className="flex justify-center mb-2">
@@ -784,14 +789,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">下顔面比率</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.measurements.lowerFaceRatio.change > 0 ? 'text-green-600' : 
-                      result.visionResult.diff.measurements.lowerFaceRatio.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.measurements.lowerFaceRatio.change > 0 ? 'text-green-600' : 
+                      result.vision.diff.measurements.lowerFaceRatio.change < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.visionResult.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
+                      {result.vision.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.vision.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    {(result.visionResult.diff.measurements.lowerFaceRatio.before * 100).toFixed(1)}% → {(result.visionResult.diff.measurements.lowerFaceRatio.after * 100).toFixed(1)}%
+                    {(result.vision.diff.measurements.lowerFaceRatio.before * 100).toFixed(1)}% → {(result.vision.diff.measurements.lowerFaceRatio.after * 100).toFixed(1)}%
                   </div>
                   {/* 下顔面比率の図解 */}
                   <div className="flex justify-center mb-2">
@@ -817,16 +822,16 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">AI総合判定</span>
                     <span className={`text-sm font-bold ${
-                      (result.visionResult.faceLiftIndex ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
+                      (result.vision.faceLiftIndex ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {(result.visionResult.faceLiftIndex ?? 0) > 0 ? 'リフトアップ傾向' : 'たるみ傾向'}
+                      {(result.vision.faceLiftIndex ?? 0) > 0 ? 'リフトアップ傾向' : 'たるみ傾向'}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
-                    フェイスリフト指数: {result.visionResult.faceLiftIndex ?? 0}
+                    フェイスリフト指数: {result.vision.faceLiftIndex ?? 0}
                   </div>
                   <div className="text-xs text-purple-600 font-medium">
-                    {(result.visionResult.faceLiftIndex ?? 0) > 0 ? '頬の位置が上がり、フェイスラインがすっきり' : '頬のたるみが改善の余地あり'}
+                    {(result.vision.faceLiftIndex ?? 0) > 0 ? '頬の位置が上がり、フェイスラインがすっきり' : '頬のたるみが改善の余地あり'}
                   </div>
                 </div>
 
@@ -866,14 +871,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の明度</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.brightness > 0 ? 'text-green-600' : 
-                      result.visionResult.diff.skinAnalysis.improvements.brightness < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.brightness > 0 ? 'text-green-600' : 
+                      result.vision.diff.skinAnalysis.improvements.brightness < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}{result.visionResult.diff.skinAnalysis.improvements.brightness}
+                      {result.vision.diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}{result.vision.diff.skinAnalysis.improvements.brightness}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.skinQuality.brightness} → {result.visionResult.diff.skinAnalysis.after.skinQuality.brightness}
+                    {result.vision.diff.skinAnalysis.before.skinQuality.brightness} → {result.vision.diff.skinAnalysis.after.skinQuality.brightness}
                   </div>
                 </div>
 
@@ -882,14 +887,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の彩度</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.saturation > 0 ? 'text-green-600' : 
-                      result.visionResult.diff.skinAnalysis.improvements.saturation < 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.saturation > 0 ? 'text-green-600' : 
+                      result.vision.diff.skinAnalysis.improvements.saturation < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}{result.visionResult.diff.skinAnalysis.improvements.saturation}
+                      {result.vision.diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}{result.vision.diff.skinAnalysis.improvements.saturation}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.skinQuality.saturation} → {result.visionResult.diff.skinAnalysis.after.skinQuality.saturation}
+                    {result.vision.diff.skinAnalysis.before.skinQuality.saturation} → {result.vision.diff.skinAnalysis.after.skinQuality.saturation}
                   </div>
                 </div>
 
@@ -898,13 +903,13 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の均一性</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.evenness ? 'text-green-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.evenness ? 'text-green-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.evenness ? '改善' : '変化なし'}
+                      {result.vision.diff.skinAnalysis.improvements.evenness ? '改善' : '変化なし'}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.skinQuality.evenness} → {result.visionResult.diff.skinAnalysis.after.skinQuality.evenness}
+                    {result.vision.diff.skinAnalysis.before.skinQuality.evenness} → {result.vision.diff.skinAnalysis.after.skinQuality.evenness}
                   </div>
                 </div>
 
@@ -913,13 +918,13 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌のトーン</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.tone ? 'text-green-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.tone ? 'text-green-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.tone ? '変化' : '変化なし'}
+                      {result.vision.diff.skinAnalysis.improvements.tone ? '変化' : '変化なし'}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.skinQuality.tone} → {result.visionResult.diff.skinAnalysis.after.skinQuality.tone}
+                    {result.vision.diff.skinAnalysis.before.skinQuality.tone} → {result.vision.diff.skinAnalysis.after.skinQuality.tone}
                   </div>
                 </div>
 
@@ -928,14 +933,14 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">シワの見えやすさ</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? 'text-green-600' : 
-                      result.visionResult.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? 'text-red-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? 'text-green-600' : 
+                      result.vision.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}{result.visionResult.diff.skinAnalysis.improvements.wrinkleVisibility}%
+                      {result.vision.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}{result.vision.diff.skinAnalysis.improvements.wrinkleVisibility}%
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.wrinkleVisibility}% → {result.visionResult.diff.skinAnalysis.after.wrinkleVisibility}%
+                    {result.vision.diff.skinAnalysis.before.wrinkleVisibility}% → {result.vision.diff.skinAnalysis.after.wrinkleVisibility}%
                   </div>
                 </div>
 
@@ -944,13 +949,13 @@ export default function ComparePage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌年齢印象</span>
                     <span className={`text-sm font-bold ${
-                      result.visionResult.diff.skinAnalysis.improvements.estimatedAge ? 'text-green-600' : 'text-gray-600'
+                      result.vision.diff.skinAnalysis.improvements.estimatedAge ? 'text-green-600' : 'text-gray-600'
                     }`}>
-                      {result.visionResult.diff.skinAnalysis.improvements.estimatedAge ? '変化' : '変化なし'}
+                      {result.vision.diff.skinAnalysis.improvements.estimatedAge ? '変化' : '変化なし'}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {result.visionResult.diff.skinAnalysis.before.estimatedAge} → {result.visionResult.diff.skinAnalysis.after.estimatedAge}
+                    {result.vision.diff.skinAnalysis.before.estimatedAge} → {result.vision.diff.skinAnalysis.after.estimatedAge}
                   </div>
                 </div>
               </div>
@@ -965,18 +970,18 @@ export default function ComparePage() {
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2">🎭 表情分析</h4>
                     <pre className="text-xs">{JSON.stringify({
-                      joy: result.visionResult.diff?.joy,
-                      anger: result.visionResult.diff?.anger,
-                      sorrow: result.visionResult.diff?.sorrow,
-                      surprise: result.visionResult.diff?.surprise
+                      joy: result.vision.diff?.joy,
+                      anger: result.vision.diff?.anger,
+                      sorrow: result.vision.diff?.sorrow,
+                      surprise: result.vision.diff?.surprise
                     }, null, 2)}</pre>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2">📐 顔の角度変化</h4>
                     <pre className="text-xs">{JSON.stringify({
-                      headTilt: result.visionResult.diff?.headTilt,
-                      roll: result.visionResult.diff?.roll,
-                      tilt: result.visionResult.diff?.tilt
+                      headTilt: result.vision.diff?.headTilt,
+                      roll: result.vision.diff?.roll,
+                      tilt: result.vision.diff?.tilt
                     }, null, 2)}</pre>
                   </div>
                 </div>
@@ -1009,70 +1014,32 @@ export default function ComparePage() {
       </div>
 
       {/* FaceMesh診断結果表示 */}
-      {faceMeshResult && !faceMeshResult.error && (
-        <div className="mt-8 text-left bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-lg border border-blue-200">
-          <h2 className="text-xl font-bold text-blue-800 mb-4">🕸️ FaceMesh診断結果（静的画像解析）</h2>
-          <p className="text-sm text-gray-600 mb-4">468点のランドマークを用いてBefore/After画像を解析しました。</p>
-          
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-            <div className="text-gray-800 leading-relaxed text-lg mb-3">
-              {faceMeshResult.aiSummary?.comment}
-            </div>
-            <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded border-l-4 border-blue-300">
-              💡 <strong>AI判定:</strong> {faceMeshResult.aiSummary?.trend} (スコア: {faceMeshResult.aiSummary?.liftScore.toFixed(2)})
-            </div>
+      {result?.faceMesh && (
+        <div className="mt-6 p-4 border-t border-gray-200">
+          <h3 className="text-lg font-semibold mb-2">🧠 FaceMesh診断結果</h3>
+          <div className="text-sm text-gray-600">
+            <p>
+              <strong>Before:</strong>{" "}
+              {result.faceMesh.before?.landmarks ?? 0} 点 |
+              信頼度: {result.faceMesh.before?.detectionConfidence?.toFixed(2) ?? "N/A"}
+            </p>
+            <p>
+              <strong>After:</strong>{" "}
+              {result.faceMesh.after?.landmarks ?? 0} 点 |
+              信頼度: {result.faceMesh.after?.detectionConfidence?.toFixed(2) ?? "N/A"}
+            </p>
+            {result?.diff?.detectionConfidence && (
+              <p className="mt-1 text-blue-600">
+                検出信頼度変化:{" "}
+                {(
+                  (result.diff.detectionConfidence.after -
+                    result.diff.detectionConfidence.before) *
+                  100
+                ).toFixed(2)}
+                %
+              </p>
+            )}
           </div>
-
-          {/* FaceMesh精密数値 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {/* フェイスリフト角度 */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
-              <h3 className="text-md font-semibold text-blue-700 mb-3">フェイスリフト角度</h3>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">変化</span>
-                <span className={`text-lg font-bold ${
-                  (faceMeshResult.faceLiftAngle?.diff || 0) > 0 ? 'text-green-600' :
-                  (faceMeshResult.faceLiftAngle?.diff || 0) < 0 ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {(faceMeshResult.faceLiftAngle?.diff || 0) > 0 ? '+' : ''}{faceMeshResult.faceLiftAngle?.diff.toFixed(1)}°
-                </span>
-              </div>
-              <div className="text-xs text-gray-500">
-                Before: {faceMeshResult.faceLiftAngle?.before.toFixed(1)}° → After: {faceMeshResult.faceLiftAngle?.after.toFixed(1)}°
-              </div>
-              <div className="text-xs text-blue-600 mt-2">
-                {(faceMeshResult.faceLiftAngle?.diff || 0) > 0 ? '✅ リフトアップ' : '⚠️ たるみ傾向'}
-              </div>
-            </div>
-
-            {/* 下顔面比率 */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
-              <h3 className="text-md font-semibold text-blue-700 mb-3">下顔面比率</h3>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">変化</span>
-                <span className={`text-lg font-bold ${
-                  (faceMeshResult.lowerFaceRatio?.diff || 0) < 0 ? 'text-green-600' :
-                  (faceMeshResult.lowerFaceRatio?.diff || 0) > 0 ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {(faceMeshResult.lowerFaceRatio?.diff || 0) > 0 ? '+' : ''}{((faceMeshResult.lowerFaceRatio?.diff || 0) * 100).toFixed(2)}%
-                </span>
-              </div>
-              <div className="text-xs text-gray-500">
-                Before: {((faceMeshResult.lowerFaceRatio?.before || 0) * 100).toFixed(1)}% → After: {((faceMeshResult.lowerFaceRatio?.after || 0) * 100).toFixed(1)}%
-              </div>
-              <div className="text-xs text-blue-600 mt-2">
-                {(faceMeshResult.lowerFaceRatio?.diff || 0) < 0 ? '✅ リフトアップ' : '⚠️ たるみ傾向'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FaceMeshエラー表示 */}
-      {faceMeshResult?.error && (
-        <div className="mt-8 text-left bg-yellow-50 p-6 rounded-xl shadow-lg border border-yellow-200">
-          <h2 className="text-xl font-bold text-yellow-800 mb-4">⚠️ FaceMesh診断結果</h2>
-          <p className="text-gray-700">{faceMeshResult.error}</p>
         </div>
       )}
 
