@@ -1,5 +1,20 @@
 // src/utils/faceMeshClient.ts
-export async function runFaceMesh(base64Image: string) {
+
+// Type definitions for FaceMesh
+interface FaceMeshResult {
+  detectionConfidence: number;
+  landmarks: number;
+}
+
+interface FaceMeshResults {
+  multiFaceLandmarks?: unknown[][];
+}
+
+interface WindowWithFaceMesh extends Window {
+  FaceMesh?: unknown;
+}
+
+export async function runFaceMesh(base64Image: string): Promise<FaceMeshResult> {
   return new Promise(async (resolve, reject) => {
     try {
       console.log("FaceMesh解析開始...");
@@ -8,7 +23,7 @@ export async function runFaceMesh(base64Image: string) {
       const mp = await import("@mediapipe/face_mesh");
 
       // ✅ Global export対応
-      const FaceMesh = mp.FaceMesh || (window as any).FaceMesh;
+      const FaceMesh = mp.FaceMesh || (window as WindowWithFaceMesh).FaceMesh;
       if (!FaceMesh) {
         throw new Error("FaceMesh モジュールが読み込めませんでした");
       }
@@ -25,9 +40,9 @@ export async function runFaceMesh(base64Image: string) {
         minTrackingConfidence: 0.5,
       });
 
-      let resultData: any = null;
+      let resultData: FaceMeshResult | null = null;
 
-      faceMesh.onResults((results: any) => {
+      faceMesh.onResults((results: FaceMeshResults) => {
         console.log("FaceMesh結果:", results);
         if (results.multiFaceLandmarks?.[0]) {
           resultData = {

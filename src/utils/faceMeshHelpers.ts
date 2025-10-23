@@ -2,8 +2,19 @@
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { createCanvas, loadImage } from "canvas";
 
+// Type definitions for FaceMesh
+interface FaceMeshResults {
+  multiFaceLandmarks?: number[][][];
+}
+
+interface FaceMeshAnalysisResult {
+  success: boolean;
+  detectionConfidence: number;
+  landmarks: number;
+}
+
 // 画像を静的にFaceMeshで解析する関数
-export async function analyzeWithFaceMesh(base64Image: string) {
+export async function analyzeWithFaceMesh(base64Image: string): Promise<FaceMeshAnalysisResult> {
   return new Promise(async (resolve, reject) => {
     try {
       const faceMesh = new FaceMesh({
@@ -16,7 +27,7 @@ export async function analyzeWithFaceMesh(base64Image: string) {
       const img = await loadImage(base64Image);
       ctx.drawImage(img, 0, 0, 256, 256);
 
-      let resultsData: any = null;
+      let resultsData: FaceMeshResults | null = null;
 
       faceMesh.setOptions({
         maxNumFaces: 1,
@@ -25,18 +36,18 @@ export async function analyzeWithFaceMesh(base64Image: string) {
         minTrackingConfidence: 0.5,
       });
 
-      faceMesh.onResults((results: any) => {
-        resultsData = results;
+      faceMesh.onResults((results: unknown) => {
+        resultsData = results as FaceMeshResults;
       });
 
-      await faceMesh.send({ image: canvas });
+      await faceMesh.send({ image: canvas as unknown as HTMLCanvasElement });
       if (!resultsData) throw new Error("FaceMesh解析結果が空です。");
 
       resolve({
         success: true,
         detectionConfidence:
-          resultsData.multiFaceLandmarks?.[0]?.length ? 1.0 : 0.0,
-        landmarks: resultsData.multiFaceLandmarks?.[0]?.length ?? 0,
+          (resultsData as FaceMeshResults).multiFaceLandmarks?.[0]?.length ? 1.0 : 0.0,
+        landmarks: (resultsData as FaceMeshResults).multiFaceLandmarks?.[0]?.length ?? 0,
       });
     } catch (error) {
       console.error("❌ FaceMesh解析失敗:", error);

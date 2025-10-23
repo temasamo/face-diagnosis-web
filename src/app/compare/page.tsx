@@ -84,6 +84,7 @@ export default function ComparePage() {
   } | null>(null);
   const [result, setResult] = useState<{
     success: boolean;
+    error?: string;
     vision?: {
       success: boolean;
       diff?: {
@@ -167,31 +168,31 @@ export default function ComparePage() {
         };
       };
     };
-      comment?: string;
-      faceLiftIndex?: number;
-      faceCount?: { before: number; after: number };
-      message?: string;
+    comment?: string;
+    faceLiftIndex?: number;
+    faceCount?: { before: number; after: number };
+    message?: string;
+  };
+  faceMesh?: {
+    before?: {
+      success: boolean;
+      detectionConfidence: number;
+      landmarks: number;
     };
-    faceMesh?: {
-      before?: {
-        success: boolean;
-        detectionConfidence: number;
-        landmarks: number;
-      };
-      after?: {
-        success: boolean;
-        detectionConfidence: number;
-        landmarks: number;
-      };
+    after?: {
+      success: boolean;
+      detectionConfidence: number;
+      landmarks: number;
     };
-    diff?: {
-      detectionConfidence: {
-        before: number;
-        after: number;
-      };
-      landmarksDiff: number;
+  };
+  diff?: {
+    detectionConfidence: {
+      before: number;
+      after: number;
     };
-  } | null>(null);
+    landmarksDiff: number;
+  };
+} | null>(null);
   // FaceMesh結果はresult.faceMeshに格納されます
 
   // 顔位置自動補正関数
@@ -861,7 +862,7 @@ export default function ComparePage() {
           )}
 
           {/* 肌の状態分析結果 */}
-          {result.diff?.skinAnalysis && (
+          {result.vision?.diff?.skinAnalysis && (
             <div className="mt-6 bg-gradient-to-r from-pink-50 to-rose-50 p-4 rounded-lg border border-pink-200">
               <h3 className="font-bold text-pink-800 mb-3">🌸 肌の状態分析結果</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -995,7 +996,7 @@ export default function ComparePage() {
       {result && !result.success && (
         <div className="mt-6 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
           <h3 className="font-bold mb-2">❌ エラー</h3>
-          <p>{result.message || "顔が検出されませんでした。"}</p>
+          <p>{result.error || "顔が検出されませんでした。"}</p>
         </div>
       )}
 
