@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import vision from "@google-cloud/vision";
 import OpenAI from "openai";
+// FaceMeshはブラウザサイド専用のため、APIでは無効化
 
 // Google Cloud Vision API クライアント初期化
 const visionClient = new vision.ImageAnnotatorClient({
@@ -39,6 +40,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "画像が不足しています。" }, { status: 400 });
     }
 
+    // Vision API処理（既存機能を維持）
+    console.log("Vision API処理開始");
+    const visionResult = await processVisionAPI(before, after);
+    console.log("Vision API処理完了");
+
+    // 結果を返却（FaceMeshはブラウザサイドで処理）
+    return NextResponse.json({
+      success: true,
+      visionResult,
+      faceMeshResult: { 
+        message: "FaceMesh処理はブラウザサイドで実行されます",
+        status: "pending"
+      },
+    });
+  } catch (error: unknown) {
+    console.error("Compare API Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    return NextResponse.json({ 
+      error: "比較分析に失敗しました。",
+      details: errorMessage 
+    }, { status: 500 });
+  }
+}
+
+// Vision API処理を関数化
+async function processVisionAPI(before: string, after: string) {
+  try {
     // Base64データからdata:image/...の部分を除去
     const clean = (img: string) => img.replace(/^data:image\/\w+;base64,/, "");
 
@@ -91,10 +120,10 @@ export async function POST(req: Request) {
         beforeResFull: JSON.stringify(beforeRes, null, 2),
         afterResFull: JSON.stringify(afterRes, null, 2)
       });
-      return NextResponse.json({ 
+      return { 
         success: false, 
         message: `顔を検出できませんでした。Before: ${beforeFaces.length}個, After: ${afterFaces.length}個の顔を検出。画像の品質や顔の位置を確認してください。詳細: ${JSON.stringify({beforeFaces: beforeFaces.length, afterFaces: afterFaces.length})}` 
-      });
+      };
     }
 
     // 差分抽出（美容効果分析用）
@@ -512,7 +541,7 @@ ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change =
 
     const comment = aiRes.choices[0].message.content || "分析結果を生成できませんでした。";
 
-    return NextResponse.json({
+    return {
       success: true,
       diff,
       comment,
@@ -521,14 +550,14 @@ ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change =
         before: beforeFaces.length,
         after: afterFaces.length
       }
-    });
+    };
   } catch (error: unknown) {
-    console.error("Compare API Error:", error);
+    console.error("Vision API Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     
-    return NextResponse.json({ 
-      error: "比較分析に失敗しました。",
+    return { 
+      error: "Vision API処理に失敗しました。",
       details: errorMessage 
-    }, { status: 500 });
+    };
   }
 }
