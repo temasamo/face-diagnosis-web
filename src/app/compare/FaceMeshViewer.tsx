@@ -45,7 +45,8 @@ export default function FaceMeshViewer() {
     return () => {
       // クリーンアップ
       if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        const stream = videoRef.current.srcObject as MediaStream;
+        const tracks = stream.getTracks();
         tracks.forEach(track => track.stop());
       }
     };

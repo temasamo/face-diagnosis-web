@@ -85,7 +85,7 @@ export async function runFaceMesh(base64Image: string): Promise<FaceMeshResult> 
       console.log("FaceMesh解析開始...");
 
       const mp = await import("@mediapipe/face_mesh");
-      const FaceMesh = mp.FaceMesh || (window as any).FaceMesh;
+      const FaceMesh = mp.FaceMesh || (window as unknown as { FaceMesh: unknown }).FaceMesh;
       if (!FaceMesh) throw new Error("FaceMesh モジュールが読み込めませんでした");
 
       const faceMesh = new FaceMesh({
@@ -100,9 +100,9 @@ export async function runFaceMesh(base64Image: string): Promise<FaceMeshResult> 
         minTrackingConfidence: 0.5,
       });
 
-      let resultData: any = null;
+      let resultData: FaceMeshResult | null = null;
 
-      faceMesh.onResults((results: any) => {
+      faceMesh.onResults((results: { multiFaceLandmarks?: unknown[][] }) => {
         if (results.multiFaceLandmarks?.[0]) {
           resultData = {
             detectionConfidence: 1.0,
