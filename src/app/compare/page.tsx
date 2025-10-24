@@ -1063,12 +1063,12 @@ export default function ComparePage() {
           <div className="text-sm text-gray-600">
             <p>
               <strong>Before:</strong>{" "}
-              {result.faceMesh.before?.landmarks?.length ?? 0} 点 |
+              {Array.isArray(result.faceMesh.before?.landmarks) ? result.faceMesh.before.landmarks.length : 0} 点 |
               信頼度: {result.faceMesh.before?.detectionConfidence?.toFixed(2) ?? "N/A"}
             </p>
             <p>
               <strong>After:</strong>{" "}
-              {result.faceMesh.after?.landmarks?.length ?? 0} 点 |
+              {Array.isArray(result.faceMesh.after?.landmarks) ? result.faceMesh.after.landmarks.length : 0} 点 |
               信頼度: {result.faceMesh.after?.detectionConfidence?.toFixed(2) ?? "N/A"}
             </p>
             {result?.diff?.detectionConfidence && (

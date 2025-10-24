@@ -21,6 +21,8 @@ export default function FaceMeshViewer() {
 
     setIsSupported(true);
 
+    let currentStream: MediaStream | null = null;
+
     // カメラストリームの取得
     navigator.mediaDevices.getUserMedia({ 
       video: { 
@@ -30,6 +32,7 @@ export default function FaceMeshViewer() {
       } 
     })
     .then((stream) => {
+      currentStream = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setStatus("カメラが起動しました");
@@ -44,9 +47,8 @@ export default function FaceMeshViewer() {
 
     return () => {
       // クリーンアップ
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        const tracks = stream.getTracks();
+      if (currentStream) {
+        const tracks = currentStream.getTracks();
         tracks.forEach(track => track.stop());
       }
     };

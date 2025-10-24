@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       // FaceMesh精密測定値計算
       try {
         faceMeshMetrics = calculateFaceMetrics(
-          faceMesh.before.landmarks as any[],
-          faceMesh.after.landmarks as any[]
+          faceMesh.before.landmarks as { x: number; y: number; z: number }[],
+          faceMesh.after.landmarks as { x: number; y: number; z: number }[]
         );
         console.log("FaceMesh精密測定完了:", faceMeshMetrics);
       } catch (metricsError) {
@@ -590,7 +590,10 @@ ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change =
 }
 
 // FaceMesh診断処理関数
-async function processFaceMeshAnalysis(faceMesh: any) {
+async function processFaceMeshAnalysis(faceMesh: { 
+  before?: { landmarks?: unknown[] }; 
+  after?: { landmarks?: unknown[] } 
+}) {
   try {
     const before = faceMesh.before?.landmarks;
     const after = faceMesh.after?.landmarks;
@@ -600,10 +603,13 @@ async function processFaceMeshAnalysis(faceMesh: any) {
     }
 
     // 顔高さ・幅の変化を計算
-    const heightBefore = Math.abs(before[10]?.y - before[152]?.y) || 0;
-    const heightAfter = Math.abs(after[10]?.y - after[152]?.y) || 0;
-    const widthBefore = Math.abs(before[234]?.x - before[454]?.x) || 0;
-    const widthAfter = Math.abs(after[234]?.x - after[454]?.x) || 0;
+    const beforeLandmarks = before as { x: number; y: number; z: number }[];
+    const afterLandmarks = after as { x: number; y: number; z: number }[];
+    
+    const heightBefore = Math.abs(beforeLandmarks[10]?.y - beforeLandmarks[152]?.y) || 0;
+    const heightAfter = Math.abs(afterLandmarks[10]?.y - afterLandmarks[152]?.y) || 0;
+    const widthBefore = Math.abs(beforeLandmarks[234]?.x - beforeLandmarks[454]?.x) || 0;
+    const widthAfter = Math.abs(afterLandmarks[234]?.x - afterLandmarks[454]?.x) || 0;
 
     const diff = {
       heightChange: heightBefore > 0 ? ((heightAfter - heightBefore) / heightBefore) * 100 : 0,
