@@ -1,15 +1,10 @@
 // src/utils/faceMeshClient.ts
+import { analyzeFaceMeshDifference, Landmark } from "./facemeshUtils";
 
 // Type definitions for FaceMesh
 interface FaceMeshResult {
   detectionConfidence: number;
   landmarks: unknown[]; // 468点すべて保持
-}
-
-interface Landmark {
-  x: number;
-  y: number;
-  z: number;
 }
 
 interface FaceMeshMetrics {
@@ -25,10 +20,16 @@ interface FaceMeshMetrics {
   chinAsymmetry: number;
   balanceRatio?: number;
   midFaceHarmony?: number;
+  // 補正結果
+  correctedWidthChange?: number;
+  correctedHeightChange?: number;
+  reliability?: string;
+  dx?: number;
+  dy?: number;
 }
 
 // FaceMesh幾何学的測定関数
-export function calculateFaceMetrics(landmarksBefore: Landmark[], landmarksAfter: Landmark[]): FaceMeshMetrics {
+export function calculateFaceMetrics(landmarksBefore: Landmark[], landmarksAfter: Landmark[], imageWidth: number = 640, imageHeight: number = 480): FaceMeshMetrics {
   const getDist = (a: Landmark, b: Landmark) =>
     Math.sqrt(
       Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2)
@@ -36,11 +37,35 @@ export function calculateFaceMetrics(landmarksBefore: Landmark[], landmarksAfter
   
   const getAngle = (a: Landmark, b: Landmark) => Math.atan2(b.y - a.y, b.x - a.x) * (180 / Math.PI);
 
-  // 顔の幅・高さ変化
+  // 顔の幅・高さ変化（生の座標差）
   const widthBefore = getDist(landmarksBefore[234], landmarksBefore[454]);
   const widthAfter = getDist(landmarksAfter[234], landmarksAfter[454]);
   const heightBefore = getDist(landmarksBefore[10], landmarksBefore[152]);
   const heightAfter = getDist(landmarksAfter[10], landmarksAfter[152]);
+
+  // 補正ロジック適用
+  let correctedWidthChange: number | undefined;
+  let correctedHeightChange: number | undefined;
+  let reliability: string | undefined;
+  let dx: number | undefined;
+  let dy: number | undefined;
+
+  try {
+    const correctionResult = analyzeFaceMeshDifference(
+      landmarksBefore,
+      landmarksAfter,
+      imageWidth,
+      imageHeight
+    );
+    
+    correctedWidthChange = correctionResult.widthChange;
+    correctedHeightChange = correctionResult.heightChange;
+    reliability = correctionResult.reliability;
+    dx = correctionResult.dx;
+    dy = correctionResult.dy;
+  } catch (error) {
+    console.warn("FaceMesh補正処理でエラー:", error);
+  }
 
   return {
     // ① フェイスライン角度（顎先と左右耳下の角度）
@@ -73,9 +98,16 @@ export function calculateFaceMetrics(landmarksBefore: Landmark[], landmarksAfter
     // ⑩ 顎ライン非対称度
     chinAsymmetry: Math.abs(landmarksAfter[172].y - landmarksAfter[397].y),
     
-    // 基本変化量
-    faceWidthChange: ((widthAfter - widthBefore) / widthBefore) * 100,
-    faceHeightChange: ((heightAfter - heightBefore) / heightBefore) * 100,
+    // 基本変化量（正規化座標での変化）
+    faceWidthChange: widthAfter - widthBefore,
+    faceHeightChange: heightAfter - heightBefore,
+    
+    // 補正結果
+    correctedWidthChange,
+    correctedHeightChange,
+    reliability,
+    dx,
+    dy,
   };
 }
 

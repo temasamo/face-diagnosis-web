@@ -56,7 +56,9 @@ export async function POST(req: Request) {
       try {
         faceMeshMetrics = calculateFaceMetrics(
           faceMesh.before.landmarks as { x: number; y: number; z: number }[],
-          faceMesh.after.landmarks as { x: number; y: number; z: number }[]
+          faceMesh.after.landmarks as { x: number; y: number; z: number }[],
+          640, // デフォルト画像幅
+          480  // デフォルト画像高さ
         );
         console.log("FaceMesh精密測定完了:", faceMeshMetrics);
       } catch (metricsError) {
@@ -612,8 +614,8 @@ async function processFaceMeshAnalysis(faceMesh: {
     const widthAfter = Math.abs(afterLandmarks[234]?.x - afterLandmarks[454]?.x) || 0;
 
     const diff = {
-      heightChange: heightBefore > 0 ? ((heightAfter - heightBefore) / heightBefore) * 100 : 0,
-      widthChange: widthBefore > 0 ? ((widthAfter - widthBefore) / widthBefore) * 100 : 0,
+      heightChange: heightAfter - heightBefore,
+      widthChange: widthAfter - widthBefore,
     };
 
     const prompt = `
@@ -622,8 +624,8 @@ async function processFaceMeshAnalysis(faceMesh: {
 フォーマットは「Vision API診断結果」と同様に整え、ポジティブな変化を中心にまとめてください。
 
 ---
-顔の高さ変化率: ${diff.heightChange.toFixed(2)}%
-顔の幅変化率: ${diff.widthChange.toFixed(2)}%
+顔の高さ変化: ${(diff.heightChange * 100).toFixed(1)}% (相対的な変化)
+顔の幅変化: ${(diff.widthChange * 100).toFixed(1)}% (相対的な変化)
 ---
 
 出力は日本語で、ですます調、400〜600文字程度にしてください。

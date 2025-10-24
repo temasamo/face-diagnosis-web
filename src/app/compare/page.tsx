@@ -5,6 +5,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { runFaceMesh } from "@/utils/faceMeshClient";
 import PrecisionResultCard from "@/components/PrecisionResultCard";
+import FaceMeshResultCard from "@/components/FaceMeshResultCard";
 
 const FaceMeshViewer = dynamic(() => import("./FaceMeshViewer"), {
   ssr: false,
@@ -21,6 +22,7 @@ export default function ComparePage() {
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState<'overlay' | 'side-by-side'>('overlay'); // 比較モード
+  const [selectedTab, setSelectedTab] = useState<'facemesh' | 'vision' | 'integrated'>('facemesh'); // 結果表示タブ
 
   // ✅ スマホ対応：画像リサイズ関数（3MB→1MB前後に圧縮）
   const resizeImage = async (file: File, maxSize = 1280): Promise<string> => {
@@ -1014,24 +1016,79 @@ export default function ComparePage() {
         </div>
       )}
 
-      {/* FaceMesh診断結果表示 */}
-      {result && result.faceMeshReport && (
-        <div className="mt-10 bg-pink-50 p-6 rounded-xl border border-pink-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-pink-700 mb-3">
-            🧠 FaceMesh診断結果（AI解析）
-          </h3>
-          <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-            {result.faceMeshReport}
-          </p>
-        </div>
-      )}
+      {/* 結果表示タブ */}
+      {result && (
+        <div className="mt-10">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+            <button
+              onClick={() => setSelectedTab('facemesh')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedTab === 'facemesh'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🧠 FaceMesh単独
+            </button>
+            <button
+              onClick={() => setSelectedTab('vision')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedTab === 'vision'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              👁️ Vision API
+            </button>
+            <button
+              onClick={() => setSelectedTab('integrated')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedTab === 'integrated'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🔗 統合結果
+            </button>
+          </div>
 
-      {/* 精密数値測定結果（Vision＋FaceMesh統合） */}
-      {result && result.vision && result.faceMeshMetrics && (
-        <PrecisionResultCard 
-          vision={result.vision} 
-          faceMesh={result.faceMeshMetrics} 
-        />
+          {/* FaceMesh単独結果 */}
+          {selectedTab === 'facemesh' && result.faceMeshMetrics && (
+            <FaceMeshResultCard faceMesh={result.faceMeshMetrics} />
+          )}
+
+          {/* Vision API結果 */}
+          {selectedTab === 'vision' && result.vision && (
+            <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-green-700 mb-3">
+                👁️ Vision API診断結果
+              </h3>
+              <div className="text-gray-700">
+                <p>Vision API診断結果がここに表示されます。</p>
+              </div>
+            </div>
+          )}
+
+          {/* 統合結果 */}
+          {selectedTab === 'integrated' && result.vision && result.faceMeshMetrics && (
+            <PrecisionResultCard 
+              vision={result.vision} 
+              faceMesh={result.faceMeshMetrics} 
+            />
+          )}
+
+          {/* FaceMesh診断結果表示（AI解析） */}
+          {result.faceMeshReport && (
+            <div className="mt-6 bg-pink-50 p-6 rounded-xl border border-pink-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-pink-700 mb-3">
+                🧠 FaceMesh診断結果（AI解析）
+              </h3>
+              <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+                {result.faceMeshReport}
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* エラーメッセージ */}

@@ -1,0 +1,7 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="30" r="25" stroke="#3B82F6" stroke-width="2" fill="none"/>
+  <circle cx="30" cy="25" r="3" fill="#3B82F6"/>
+  <path d="M25 35 Q30 30 35 35" stroke="#3B82F6" stroke-width="2" fill="none"/>
+  <line x1="30" y1="25" x2="30" y2="35" stroke="#3B82F6" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="30" y="45" text-anchor="middle" font-size="8" fill="#3B82F6">鼻口</text>
+</svg>

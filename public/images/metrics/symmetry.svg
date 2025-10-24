@@ -1,0 +1,7 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="30" r="25" stroke="#3B82F6" stroke-width="2" fill="none"/>
+  <line x1="15" y1="20" x2="15" y2="40" stroke="#3B82F6" stroke-width="2"/>
+  <line x1="45" y1="20" x2="45" y2="40" stroke="#3B82F6" stroke-width="2"/>
+  <line x1="30" y1="15" x2="30" y2="45" stroke="#3B82F6" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="30" y="50" text-anchor="middle" font-size="8" fill="#3B82F6">対称</text>
+</svg>
