@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { runFaceMesh } from "@/utils/faceMeshClient";
+import PrecisionResultCard from "@/components/PrecisionResultCard";
 
 const FaceMeshViewer = dynamic(() => import("./FaceMeshViewer"), {
   ssr: false,
@@ -85,6 +86,21 @@ export default function ComparePage() {
   const [result, setResult] = useState<{
     success: boolean;
     error?: string;
+    faceMeshReport?: string;
+    faceMeshMetrics?: {
+      faceWidthChange: number;
+      faceHeightChange: number;
+      faceLineAngle: number;
+      cheekVolume: number;
+      symmetryIndex: number;
+      eyeLiftAngle: number;
+      mouthCornerAngle: number;
+      lowerFaceRatio: number;
+      jawCurve: number;
+      chinAsymmetry: number;
+      balanceRatio?: number;
+      midFaceHarmony?: number;
+    };
     vision?: {
       success: boolean;
       diff?: {
@@ -207,6 +223,11 @@ export default function ComparePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ before, after }),
       });
+      
+      if (!alignRes.ok) {
+        throw new Error(`HTTP error! status: ${alignRes.status}`);
+      }
+      
       const alignData = await alignRes.json();
       
       if (!alignData.success) {
@@ -273,7 +294,8 @@ export default function ComparePage() {
       
     } catch (error) {
       console.error("Alignment error:", error);
-      alert("顔の位置補正中にエラーが発生しました。");
+      console.log("顔位置補正をスキップして続行します。");
+      // エラーが発生しても処理を続行
     } finally {
       setAligning(false);
     }
@@ -992,6 +1014,26 @@ export default function ComparePage() {
         </div>
       )}
 
+      {/* FaceMesh診断結果表示 */}
+      {result && result.faceMeshReport && (
+        <div className="mt-10 bg-pink-50 p-6 rounded-xl border border-pink-200 shadow-sm">
+          <h3 className="text-lg font-semibold text-pink-700 mb-3">
+            🧠 FaceMesh診断結果（AI解析）
+          </h3>
+          <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+            {result.faceMeshReport}
+          </p>
+        </div>
+      )}
+
+      {/* 精密数値測定結果（Vision＋FaceMesh統合） */}
+      {result && result.vision && result.faceMeshMetrics && (
+        <PrecisionResultCard 
+          vision={result.vision} 
+          faceMesh={result.faceMeshMetrics} 
+        />
+      )}
+
       {/* エラーメッセージ */}
       {result && !result.success && (
         <div className="mt-6 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
@@ -1021,12 +1063,12 @@ export default function ComparePage() {
           <div className="text-sm text-gray-600">
             <p>
               <strong>Before:</strong>{" "}
-              {result.faceMesh.before?.landmarks ?? 0} 点 |
+              {result.faceMesh.before?.landmarks?.length ?? 0} 点 |
               信頼度: {result.faceMesh.before?.detectionConfidence?.toFixed(2) ?? "N/A"}
             </p>
             <p>
               <strong>After:</strong>{" "}
-              {result.faceMesh.after?.landmarks ?? 0} 点 |
+              {result.faceMesh.after?.landmarks?.length ?? 0} 点 |
               信頼度: {result.faceMesh.after?.detectionConfidence?.toFixed(2) ?? "N/A"}
             </p>
             {result?.diff?.detectionConfidence && (

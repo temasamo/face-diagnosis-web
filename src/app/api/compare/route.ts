@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import vision from "@google-cloud/vision";
 import OpenAI from "openai";
+import { calculateFaceMetrics } from "@/utils/faceMeshClient";
 
 // Google Cloud Vision API クライアント初期化
 const visionClient = new vision.ImageAnnotatorClient({
@@ -44,17 +45,40 @@ export async function POST(req: Request) {
     const visionResult = await processVisionAPI(before, after);
     console.log("Vision API処理完了");
 
+    // ✅ FaceMesh診断処理（新規追加）
+    let faceMeshReport = null;
+    let faceMeshMetrics = null;
+    if (faceMesh?.before?.landmarks && faceMesh?.after?.landmarks) {
+      console.log("FaceMesh診断処理開始");
+      faceMeshReport = await processFaceMeshAnalysis(faceMesh);
+      
+      // FaceMesh精密測定値計算
+      try {
+        faceMeshMetrics = calculateFaceMetrics(
+          faceMesh.before.landmarks as any[],
+          faceMesh.after.landmarks as any[]
+        );
+        console.log("FaceMesh精密測定完了:", faceMeshMetrics);
+      } catch (metricsError) {
+        console.error("FaceMesh精密測定エラー:", metricsError);
+      }
+      
+      console.log("FaceMesh診断処理完了");
+    }
+
     // ✅ 結果統合
     return NextResponse.json({
       success: true,
       vision: visionResult,
       faceMesh,
+      faceMeshReport,
+      faceMeshMetrics,
       diff: {
         detectionConfidence: {
-          before: faceMesh.before.detectionConfidence,
-          after: faceMesh.after.detectionConfidence,
+          before: faceMesh?.before?.detectionConfidence || 0,
+          after: faceMesh?.after?.detectionConfidence || 0,
         },
-        landmarksDiff: faceMesh.after.landmarks - faceMesh.before.landmarks,
+        landmarksDiff: (faceMesh?.after?.landmarks?.length || 0) - (faceMesh?.before?.landmarks?.length || 0),
       },
     });
   } catch (error: unknown) {
@@ -562,5 +586,51 @@ ${skinChanges.length > 0 ? `【肌の状態変化】\n${skinChanges.map(change =
       error: "Vision API処理に失敗しました。",
       details: errorMessage 
     };
+  }
+}
+
+// FaceMesh診断処理関数
+async function processFaceMeshAnalysis(faceMesh: any) {
+  try {
+    const before = faceMesh.before?.landmarks;
+    const after = faceMesh.after?.landmarks;
+    
+    if (!before || !after || before.length === 0 || after.length === 0) {
+      throw new Error("FaceMeshデータが不足しています。");
+    }
+
+    // 顔高さ・幅の変化を計算
+    const heightBefore = Math.abs(before[10]?.y - before[152]?.y) || 0;
+    const heightAfter = Math.abs(after[10]?.y - after[152]?.y) || 0;
+    const widthBefore = Math.abs(before[234]?.x - before[454]?.x) || 0;
+    const widthAfter = Math.abs(after[234]?.x - after[454]?.x) || 0;
+
+    const diff = {
+      heightChange: heightBefore > 0 ? ((heightAfter - heightBefore) / heightBefore) * 100 : 0,
+      widthChange: widthBefore > 0 ? ((widthAfter - widthBefore) / widthBefore) * 100 : 0,
+    };
+
+    const prompt = `
+あなたは美容専門AIです。
+以下の数値をもとに、美容施術による変化を自然で安心感のある日本語で説明してください。
+フォーマットは「Vision API診断結果」と同様に整え、ポジティブな変化を中心にまとめてください。
+
+---
+顔の高さ変化率: ${diff.heightChange.toFixed(2)}%
+顔の幅変化率: ${diff.widthChange.toFixed(2)}%
+---
+
+出力は日本語で、ですます調、400〜600文字程度にしてください。
+`;
+
+    const ai = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    return ai.choices[0].message.content;
+  } catch (error) {
+    console.error("❌ FaceMesh診断APIエラー:", error);
+    return "FaceMesh診断でエラーが発生しました。";
   }
 }
