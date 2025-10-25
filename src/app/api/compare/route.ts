@@ -52,6 +52,22 @@ export async function POST(req: Request) {
       afterPrefix: after.substring(0, 30)
     });
 
+    // 画像の前処理（解像度統一）
+    const preprocessImage = async (base64Image: string) => {
+      const img = new Image();
+      img.src = base64Image;
+      await new Promise(resolve => img.onload = resolve);
+      
+      // 解像度を統一（800x600にリサイズ）
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 800;
+      canvas.height = 600;
+      ctx?.drawImage(img, 0, 0, 800, 600);
+      
+      return canvas.toDataURL('image/jpeg', 0.9);
+    };
+
     // Vision API呼び出し（Before / After）- 詳細な顔分析を実行
     console.log("Before画像のVision API呼び出し開始");
     const [beforeRes] = await visionClient.annotateImage({
@@ -151,27 +167,11 @@ export async function POST(req: Request) {
     const beforeSkinAnalysis = analyzeSkinCondition(beforeFace, beforeColors);
     const afterSkinAnalysis = analyzeSkinCondition(afterFace, afterColors);
 
-    // 精密な数値測定関数（顔の幅 = 頬骨間距離）
+    // 精密な数値測定関数（顔の幅 = 目の外側間距離）
     const calculateFaceWidth = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
       
-      // 左右の頬骨の位置を取得
-      const leftCheek = landmarks.find((l) => l.type === 'LEFT_CHEEK');
-      const rightCheek = landmarks.find((l) => l.type === 'RIGHT_CHEEK');
-      
-      if (leftCheek && rightCheek && leftCheek.position && rightCheek.position) {
-        const dx = rightCheek.position.x - leftCheek.position.x;
-        const dy = rightCheek.position.y - leftCheek.position.y;
-        const width = Math.sqrt(dx * dx + dy * dy);
-        console.log("顔の幅計算詳細（頬骨間）:", { 
-          leftCheek: leftCheek.position, 
-          rightCheek: rightCheek.position, 
-          width 
-        });
-        return width;
-      }
-      
-      // 頬骨が見つからない場合は、目の外側から外側の距離を使用
+      // 最優先: 目の外側から外側の距離を使用
       const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE_OUTER_CORNER');
       const rightEye = landmarks.find((l) => l.type === 'RIGHT_EYE_OUTER_CORNER');
       
@@ -187,9 +187,42 @@ export async function POST(req: Request) {
         return width;
       }
       
-      console.log("顔の幅計算失敗: 頬骨または目の外側が見つかりません");
+      // フォールバック1: 頬骨間距離
+      const leftCheek = landmarks.find((l) => l.type === 'LEFT_CHEEK');
+      const rightCheek = landmarks.find((l) => l.type === 'RIGHT_CHEEK');
+      
+      if (leftCheek && rightCheek && leftCheek.position && rightCheek.position) {
+        const dx = rightCheek.position.x - leftCheek.position.x;
+        const dy = rightCheek.position.y - leftCheek.position.y;
+        const width = Math.sqrt(dx * dx + dy * dy);
+        console.log("顔の幅計算詳細（頬骨間）:", { 
+          leftCheek: leftCheek.position, 
+          rightCheek: rightCheek.position, 
+          width 
+        });
+        return width;
+      }
+      
+      // フォールバック2: 目の中心間距離を使用
+      const leftEyeCenter = landmarks.find((l) => l.type === 'LEFT_EYE');
+      const rightEyeCenter = landmarks.find((l) => l.type === 'RIGHT_EYE');
+      
+      if (leftEyeCenter && rightEyeCenter && leftEyeCenter.position && rightEyeCenter.position) {
+        const dx = rightEyeCenter.position.x - leftEyeCenter.position.x;
+        const dy = rightEyeCenter.position.y - leftEyeCenter.position.y;
+        const width = Math.sqrt(dx * dx + dy * dy);
+        console.log("顔の幅計算詳細（目中心間）:", { 
+          leftEyeCenter: leftEyeCenter.position, 
+          rightEyeCenter: rightEyeCenter.position, 
+          width 
+        });
+        return width;
+      }
+      
+      console.log("顔の幅計算失敗: 目の外側、頬骨、目の中心が見つかりません");
       return 0;
     };
+
 
     // 精密な数値測定関数（顔の長さ = 額から顎先まで）
     const calculateFaceHeight = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
@@ -358,7 +391,23 @@ export async function POST(req: Request) {
       afterFaceWidth,
       faceWidthChange,
       beforeBoundingBox: beforeFace.boundingPoly?.vertices,
-      afterBoundingBox: afterFace.boundingPoly?.vertices
+      afterBoundingBox: afterFace.boundingPoly?.vertices,
+      beforeLandmarks: beforeFace.landmarks?.length || 0,
+      afterLandmarks: afterFace.landmarks?.length || 0,
+      beforeLandmarkTypes: beforeFace.landmarks?.map(l => l.type).slice(0, 10) || [],
+      afterLandmarkTypes: afterFace.landmarks?.map(l => l.type).slice(0, 10) || []
+    });
+
+    // 全ランドマークの詳細表示
+    console.log("全ランドマーク詳細:", {
+      beforeAllLandmarks: beforeFace.landmarks?.map(l => ({
+        type: l.type,
+        position: l.position
+      })) || [],
+      afterAllLandmarks: afterFace.landmarks?.map(l => ({
+        type: l.type,
+        position: l.position
+      })) || []
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -366,6 +415,7 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const afterFaceHeight = calculateFaceHeight(afterFace as any);
     const faceHeightChange = Math.round((afterFaceHeight - beforeFaceHeight) * 0.1);
+
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const beforeEyeDistance = calculateEyeDistance(beforeFace as any);
@@ -460,10 +510,10 @@ export async function POST(req: Request) {
         after: afterFace.boundingPoly?.vertices || []
       },
       
-      // ランドマーク（顔の特徴点）
+      // ランドマーク情報（可視化用）
       landmarks: {
-        before: beforeFace.landmarks?.length || 0,
-        after: afterFace.landmarks?.length || 0
+        before: beforeFace.landmarks || [],
+        after: afterFace.landmarks || []
       },
       
       // 検出信頼度

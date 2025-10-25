@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import LandmarkVisualizer from "@/components/LandmarkVisualizer";
 
 export default function ComparePage() {
   const [before, setBefore] = useState<string | null>(null);
@@ -11,6 +12,11 @@ export default function ComparePage() {
   const [aligning, setAligning] = useState(false);
   const [alignedBefore, setAlignedBefore] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState<'overlay' | 'side-by-side'>('overlay'); // 比較モード
+  
+  // 開発者モード制御
+  const isDevMode = process.env.NODE_ENV === 'development' || 
+                   process.env.NEXT_PUBLIC_DEV_MODE === 'true' ||
+                   (typeof window !== 'undefined' && window.location.hostname === 'localhost');
 
   // ✅ スマホ対応：画像リサイズ関数（3MB→1MB前後に圧縮）
   const resizeImage = async (file: File, maxSize = 1280): Promise<string> => {
@@ -160,6 +166,10 @@ export default function ComparePage() {
     faceLiftIndex?: number;
     faceCount?: { before: number; after: number };
     message?: string;
+    landmarks?: {
+      before: any[];
+      after: any[];
+    };
   } | null>(null);
 
   // 顔位置自動補正関数
@@ -550,6 +560,35 @@ export default function ComparePage() {
             </div>
           </div>
 
+          {/* ランドマーク可視化（開発者限定） */}
+          {result.diff?.landmarks && isDevMode && (
+            <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-green-800">🔍 ランドマーク可視化</h3>
+                <div className="flex items-center gap-2">
+                  <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                    DEV ONLY
+                  </span>
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                    {result.diff.landmarks.before.length} landmarks
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <LandmarkVisualizer 
+                  landmarks={result.diff.landmarks.before} 
+                  imageUrl={before || ''} 
+                  title="Before画像のランドマーク" 
+                />
+                <LandmarkVisualizer 
+                  landmarks={result.diff.landmarks.after} 
+                  imageUrl={after || ''} 
+                  title="After画像のランドマーク" 
+                />
+              </div>
+            </div>
+          )}
+
           {/* 精密数値測定結果 */}
           {result.diff?.measurements && (
             <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
@@ -587,7 +626,7 @@ export default function ComparePage() {
                       <div className="absolute top-1/2 right-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-y-1"></div>
                     </div>
                   </div>
-                  <div className="text-xs text-center text-blue-600 font-medium">左右の端から端まで</div>
+                  <div className="text-xs text-center text-blue-600 font-medium">左右の目の中心間</div>
                 </div>
 
                 {/* 顔の長さ */}
@@ -609,6 +648,8 @@ export default function ComparePage() {
                     <div className="relative w-20 h-24">
                       {/* 顔の輪郭（より詳細） */}
                       <div className="absolute inset-0 border-2 border-gray-500 rounded-full bg-gradient-to-b from-amber-50 to-amber-100"></div>
+                      {/* 眉毛 */}
+                      <div className="absolute top-5 left-3 right-3 h-0.5 bg-gray-700 rounded-full"></div>
                       {/* 目 */}
                       <div className="absolute top-7 left-4 w-2 h-1 bg-gray-600 rounded-full"></div>
                       <div className="absolute top-7 right-4 w-2 h-1 bg-gray-600 rounded-full"></div>
@@ -616,13 +657,13 @@ export default function ComparePage() {
                       <div className="absolute top-9 left-1/2 w-1 h-1 bg-gray-500 rounded-full transform -translate-x-0.5"></div>
                       {/* 口 */}
                       <div className="absolute top-11 left-1/2 w-2 h-0.5 bg-gray-600 rounded-full transform -translate-x-1"></div>
-                      {/* 垂直の矢印（顔の長さ） */}
-                      <div className="absolute left-1/2 top-1 bottom-1 w-1 bg-blue-600 rounded-full transform -translate-x-0.5"></div>
-                      <div className="absolute left-1/2 top-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
+                      {/* 垂直の矢印（眉毛中央から顎先） */}
+                      <div className="absolute left-1/2 top-5 bottom-1 w-1 bg-blue-600 rounded-full transform -translate-x-0.5"></div>
+                      <div className="absolute left-1/2 top-5 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
                       <div className="absolute left-1/2 bottom-0 w-2 h-2 bg-blue-600 rounded-full transform -translate-x-1"></div>
                     </div>
                   </div>
-                  <div className="text-xs text-center text-blue-600 font-medium">額から顎まで</div>
+                  <div className="text-xs text-center text-blue-600 font-medium">眉毛中央から顎先まで</div>
                 </div>
 
                 {/* 目の間隔 */}
