@@ -151,40 +151,128 @@ export async function POST(req: Request) {
     const beforeSkinAnalysis = analyzeSkinCondition(beforeFace, beforeColors);
     const afterSkinAnalysis = analyzeSkinCondition(afterFace, afterColors);
 
-    // 精密な数値測定関数
-    const calculateFaceWidth = (face: { boundingPoly?: { vertices?: Array<{ x?: number; y?: number }> } }) => {
-      const vertices = face.boundingPoly?.vertices || [];
-      if (vertices.length >= 4) {
-        const left = vertices[0].x || vertices[3].x || 0;
-        const right = vertices[1].x || vertices[2].x || 0;
-        return Math.abs(right - left);
+    // 精密な数値測定関数（顔の幅 = 頬骨間距離）
+    const calculateFaceWidth = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
+      const landmarks = face.landmarks || [];
+      
+      // 左右の頬骨の位置を取得
+      const leftCheek = landmarks.find((l) => l.type === 'LEFT_CHEEK');
+      const rightCheek = landmarks.find((l) => l.type === 'RIGHT_CHEEK');
+      
+      if (leftCheek && rightCheek && leftCheek.position && rightCheek.position) {
+        const dx = rightCheek.position.x - leftCheek.position.x;
+        const dy = rightCheek.position.y - leftCheek.position.y;
+        const width = Math.sqrt(dx * dx + dy * dy);
+        console.log("顔の幅計算詳細（頬骨間）:", { 
+          leftCheek: leftCheek.position, 
+          rightCheek: rightCheek.position, 
+          width 
+        });
+        return width;
       }
+      
+      // 頬骨が見つからない場合は、目の外側から外側の距離を使用
+      const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE_OUTER_CORNER');
+      const rightEye = landmarks.find((l) => l.type === 'RIGHT_EYE_OUTER_CORNER');
+      
+      if (leftEye && rightEye && leftEye.position && rightEye.position) {
+        const dx = rightEye.position.x - leftEye.position.x;
+        const dy = rightEye.position.y - leftEye.position.y;
+        const width = Math.sqrt(dx * dx + dy * dy);
+        console.log("顔の幅計算詳細（目外側間）:", { 
+          leftEye: leftEye.position, 
+          rightEye: rightEye.position, 
+          width 
+        });
+        return width;
+      }
+      
+      console.log("顔の幅計算失敗: 頬骨または目の外側が見つかりません");
       return 0;
     };
 
-    const calculateFaceHeight = (face: { boundingPoly?: { vertices?: Array<{ x?: number; y?: number }> } }) => {
-      const vertices = face.boundingPoly?.vertices || [];
-      if (vertices.length >= 4) {
-        const top = vertices[0].y || vertices[1].y || 0;
-        const bottom = vertices[2].y || vertices[3].y || 0;
-        return Math.abs(bottom - top);
+    // 精密な数値測定関数（顔の長さ = 額から顎先まで）
+    const calculateFaceHeight = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
+      const landmarks = face.landmarks || [];
+      
+      // 額の位置を取得（眉毛の上）
+      const leftEyebrow = landmarks.find((l) => l.type === 'LEFT_OF_LEFT_EYEBROW');
+      const rightEyebrow = landmarks.find((l) => l.type === 'RIGHT_OF_RIGHT_EYEBROW');
+      
+      // 顎先の位置を取得
+      const chin = landmarks.find((l) => l.type === 'CHIN_GNATHION');
+      
+      if (leftEyebrow && rightEyebrow && chin && 
+          leftEyebrow.position && rightEyebrow.position && chin.position) {
+        
+        // 眉毛の中央点を計算
+        const eyebrowCenterY = (leftEyebrow.position.y + rightEyebrow.position.y) / 2;
+        const chinY = chin.position.y;
+        
+        const height = Math.abs(chinY - eyebrowCenterY);
+        console.log("顔の長さ計算詳細（額-顎先）:", { 
+          eyebrowCenterY, 
+          chinY, 
+          height,
+          leftEyebrow: leftEyebrow.position,
+          rightEyebrow: rightEyebrow.position,
+          chin: chin.position
+        });
+        return height;
       }
+      
+      // 眉毛が見つからない場合は、目の上から顎先まで
+      const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE');
+      const rightEye = landmarks.find((l) => l.type === 'RIGHT_EYE');
+      
+      if (leftEye && rightEye && chin && 
+          leftEye.position && rightEye.position && chin.position) {
+        
+        // 目の中央点を計算
+        const eyeCenterY = (leftEye.position.y + rightEye.position.y) / 2;
+        const chinY = chin.position.y;
+        
+        const height = Math.abs(chinY - eyeCenterY);
+        console.log("顔の長さ計算詳細（目-顎先）:", { 
+          eyeCenterY, 
+          chinY, 
+          height,
+          leftEye: leftEye.position,
+          rightEye: rightEye.position,
+          chin: chin.position
+        });
+        return height;
+      }
+      
+      console.log("顔の長さ計算失敗: 眉毛または目、顎先が見つかりません");
       return 0;
     };
 
+    // 目の間隔（左右の目の中心間距離）
     const calculateEyeDistance = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
+      
+      // 左右の目の中心を取得
       const leftEye = landmarks.find((l) => l.type === 'LEFT_EYE');
       const rightEye = landmarks.find((l) => l.type === 'RIGHT_EYE');
       
       if (leftEye && rightEye && leftEye.position && rightEye.position) {
-        const dx = leftEye.position.x - rightEye.position.x;
-        const dy = leftEye.position.y - rightEye.position.y;
-        return Math.sqrt(dx * dx + dy * dy);
+        const dx = rightEye.position.x - leftEye.position.x; // 右から左を引く（正の値）
+        const dy = rightEye.position.y - leftEye.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        console.log("目の間隔計算詳細:", { 
+          leftEye: leftEye.position, 
+          rightEye: rightEye.position, 
+          distance 
+        });
+        return distance;
       }
+      
+      console.log("目の間隔計算失敗: 左右の目が見つかりません");
       return 0;
     };
 
+    // 眉毛と目の距離（眉毛から目までの垂直距離）
     const calculateEyebrowToEyeDistance = (face: { landmarks?: Array<{ type?: string; position?: { x: number; y: number } }> }) => {
       const landmarks = face.landmarks || [];
       const leftEyebrow = landmarks.find((l) => l.type === 'LEFT_OF_LEFT_EYEBROW');
@@ -193,8 +281,16 @@ export async function POST(req: Request) {
       if (leftEyebrow && leftEye && leftEyebrow.position && leftEye.position) {
         const dx = leftEyebrow.position.x - leftEye.position.x;
         const dy = leftEyebrow.position.y - leftEye.position.y;
-        return Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        console.log("眉毛と目の距離計算詳細:", { 
+          leftEyebrow: leftEyebrow.position, 
+          leftEye: leftEye.position, 
+          distance 
+        });
+        return distance;
       }
+      
+      console.log("眉毛と目の距離計算失敗: 眉毛または目が見つかりません");
       return 0;
     };
 
@@ -255,6 +351,15 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const afterFaceWidth = calculateFaceWidth(afterFace as any);
     const faceWidthChange = Math.round((afterFaceWidth - beforeFaceWidth) * 0.1); // ピクセルをmmに変換（概算）
+    
+    // デバッグ用ログ追加
+    console.log("顔の幅計算デバッグ:", {
+      beforeFaceWidth,
+      afterFaceWidth,
+      faceWidthChange,
+      beforeBoundingBox: beforeFace.boundingPoly?.vertices,
+      afterBoundingBox: afterFace.boundingPoly?.vertices
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const beforeFaceHeight = calculateFaceHeight(beforeFace as any);
