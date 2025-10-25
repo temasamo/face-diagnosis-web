@@ -161,15 +161,15 @@ export default function ComparePage() {
           estimatedAge: boolean;
         };
       };
+      landmarks?: {
+        before: Array<{ type: string; position: { x: number; y: number; z: number } }>;
+        after: Array<{ type: string; position: { x: number; y: number; z: number } }>;
+      };
     };
     comment?: string;
     faceLiftIndex?: number;
     faceCount?: { before: number; after: number };
     message?: string;
-    landmarks?: {
-      before: Array<{ type: string; position: { x: number; y: number; z: number } }>;
-      after: Array<{ type: string; position: { x: number; y: number; z: number } }>;
-    };
   } | null>(null);
 
   // 顔位置自動補正関数
