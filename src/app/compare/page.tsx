@@ -167,8 +167,8 @@ export default function ComparePage() {
     faceCount?: { before: number; after: number };
     message?: string;
     landmarks?: {
-      before: any[];
-      after: any[];
+      before: Array<{ type: string; position: { x: number; y: number; z: number } }>;
+      after: Array<{ type: string; position: { x: number; y: number; z: number } }>;
     };
   } | null>(null);
 
@@ -577,12 +577,10 @@ export default function ComparePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <LandmarkVisualizer 
                   landmarks={result.diff.landmarks.before} 
-                  imageUrl={before || ''} 
                   title="Before画像のランドマーク" 
                 />
                 <LandmarkVisualizer 
                   landmarks={result.diff.landmarks.after} 
-                  imageUrl={after || ''} 
                   title="After画像のランドマーク" 
                 />
               </div>

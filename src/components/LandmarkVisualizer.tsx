@@ -7,11 +7,10 @@ interface Landmark {
 
 interface LandmarkVisualizerProps {
   landmarks: Landmark[];
-  imageUrl: string;
   title: string;
 }
 
-export default function LandmarkVisualizer({ landmarks, imageUrl, title }: LandmarkVisualizerProps) {
+export default function LandmarkVisualizer({ landmarks, title }: LandmarkVisualizerProps) {
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border">
       <h3 className="text-lg font-semibold mb-3 text-gray-800">{title}</h3>

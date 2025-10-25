@@ -52,21 +52,6 @@ export async function POST(req: Request) {
       afterPrefix: after.substring(0, 30)
     });
 
-    // 画像の前処理（解像度統一）
-    const preprocessImage = async (base64Image: string) => {
-      const img = new Image();
-      img.src = base64Image;
-      await new Promise(resolve => img.onload = resolve);
-      
-      // 解像度を統一（800x600にリサイズ）
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = 800;
-      canvas.height = 600;
-      ctx?.drawImage(img, 0, 0, 800, 600);
-      
-      return canvas.toDataURL('image/jpeg', 0.9);
-    };
 
     // Vision API呼び出し（Before / After）- 詳細な顔分析を実行
     console.log("Before画像のVision API呼び出し開始");
