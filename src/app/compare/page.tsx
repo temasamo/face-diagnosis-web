@@ -596,12 +596,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">顔の幅</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.faceWidth.change < 0 ? 'text-green-600' : 
-                      result.diff.measurements.faceWidth.change > 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.faceWidth.change > 0 ? '+' : ''}{result.diff.measurements.faceWidth.change}mm
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.faceWidth.change < 0 ? 'text-green-600' : 
+                        result.diff.measurements.faceWidth.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.faceWidth.change > 0 ? '+' : ''}{result.diff.measurements.faceWidth.change}mm
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.faceWidth.change < 0 ? '😄' : 
+                         result.diff.measurements.faceWidth.change > 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceWidth.before} → {result.diff.measurements.faceWidth.after}
@@ -631,12 +637,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">顔の長さ</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.faceHeight.change < 0 ? 'text-green-600' : 
-                      result.diff.measurements.faceHeight.change > 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.diff.measurements.faceHeight.change}mm
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.faceHeight.change < 0 ? 'text-green-600' : 
+                        result.diff.measurements.faceHeight.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.faceHeight.change > 0 ? '+' : ''}{result.diff.measurements.faceHeight.change}mm
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.faceHeight.change < 0 ? '😄' : 
+                         result.diff.measurements.faceHeight.change > 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceHeight.before} → {result.diff.measurements.faceHeight.after}
@@ -668,12 +680,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">目の間隔</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.eyeDistance.change > 0 ? 'text-green-600' : 
-                      result.diff.measurements.eyeDistance.change < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyeDistance.change}mm
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.eyeDistance.change > 0 ? 'text-green-600' : 
+                        result.diff.measurements.eyeDistance.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.eyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyeDistance.change}mm
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.eyeDistance.change > 0 ? '😄' : 
+                         result.diff.measurements.eyeDistance.change < 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.eyeDistance.before} → {result.diff.measurements.eyeDistance.after}
@@ -706,12 +724,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">眉毛と目の距離</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.eyebrowToEyeDistance.change < 0 ? 'text-green-600' : 
-                      result.diff.measurements.eyebrowToEyeDistance.change > 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyebrowToEyeDistance.change}mm
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.eyebrowToEyeDistance.change < 0 ? 'text-green-600' : 
+                        result.diff.measurements.eyebrowToEyeDistance.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.eyebrowToEyeDistance.change > 0 ? '+' : ''}{result.diff.measurements.eyebrowToEyeDistance.change}mm
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.eyebrowToEyeDistance.change < 0 ? '😄' : 
+                         result.diff.measurements.eyebrowToEyeDistance.change > 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.eyebrowToEyeDistance.before} → {result.diff.measurements.eyebrowToEyeDistance.after}
@@ -746,12 +770,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">フェイスリフト角度</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.faceLiftAngle.change > 0 ? 'text-green-600' : 
-                      result.diff.measurements.faceLiftAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.faceLiftAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceLiftAngle.change}度
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.faceLiftAngle.change > 0 ? 'text-green-600' : 
+                        result.diff.measurements.faceLiftAngle.change < 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.faceLiftAngle.change > 0 ? '+' : ''}{result.diff.measurements.faceLiftAngle.change}度
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.faceLiftAngle.change > 0 ? '😄' : 
+                         result.diff.measurements.faceLiftAngle.change < 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {result.diff.measurements.faceLiftAngle.before.toFixed(1)} → {result.diff.measurements.faceLiftAngle.after.toFixed(1)}
@@ -779,12 +809,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">下顔面比率</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.measurements.lowerFaceRatio.change > 0 ? 'text-green-600' : 
-                      result.diff.measurements.lowerFaceRatio.change < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.measurements.lowerFaceRatio.change < 0 ? 'text-green-600' : 
+                        result.diff.measurements.lowerFaceRatio.change > 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.measurements.lowerFaceRatio.change < 0 ? '😄' : 
+                         result.diff.measurements.lowerFaceRatio.change > 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     {(result.diff.measurements.lowerFaceRatio.before * 100).toFixed(1)}% → {(result.diff.measurements.lowerFaceRatio.after * 100).toFixed(1)}%
@@ -812,11 +848,16 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-purple-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">AI総合判定</span>
-                    <span className={`text-sm font-bold ${
-                      (result.faceLiftIndex ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {(result.faceLiftIndex ?? 0) > 0 ? 'リフトアップ傾向' : 'たるみ傾向'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        (result.faceLiftIndex ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {(result.faceLiftIndex ?? 0) > 0 ? 'リフトアップ傾向' : 'たるみ傾向'}
+                      </span>
+                      <span className="text-lg">
+                        {(result.faceLiftIndex ?? 0) > 0 ? '😄' : '😢'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 mb-2">
                     フェイスリフト指数: {result.faceLiftIndex ?? 0}
@@ -830,12 +871,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">検出信頼度</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.detectionConfidence.after > result.diff.detectionConfidence.before ? 'text-green-600' : 
-                      result.diff.detectionConfidence.after < result.diff.detectionConfidence.before ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {((result.diff.detectionConfidence.after - result.diff.detectionConfidence.before) * 100).toFixed(1)}%
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.detectionConfidence.after > result.diff.detectionConfidence.before ? 'text-green-600' : 
+                        result.diff.detectionConfidence.after < result.diff.detectionConfidence.before ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {((result.diff.detectionConfidence.after - result.diff.detectionConfidence.before) * 100).toFixed(1)}%
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.detectionConfidence.after > result.diff.detectionConfidence.before ? '😄' : 
+                         result.diff.detectionConfidence.after < result.diff.detectionConfidence.before ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {((result.diff.detectionConfidence.before) * 100).toFixed(1)}% → {((result.diff.detectionConfidence.after) * 100).toFixed(1)}%
@@ -855,12 +902,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の明度</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.brightness > 0 ? 'text-green-600' : 
-                      result.diff.skinAnalysis.improvements.brightness < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.brightness}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.brightness > 0 ? 'text-green-600' : 
+                        result.diff.skinAnalysis.improvements.brightness < 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.brightness > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.brightness}
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.brightness > 0 ? '😄' : 
+                         result.diff.skinAnalysis.improvements.brightness < 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.skinQuality.brightness} → {result.diff.skinAnalysis.after.skinQuality.brightness}
@@ -871,12 +924,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の彩度</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.saturation > 0 ? 'text-green-600' : 
-                      result.diff.skinAnalysis.improvements.saturation < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.saturation}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.saturation > 0 ? 'text-green-600' : 
+                        result.diff.skinAnalysis.improvements.saturation < 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.saturation > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.saturation}
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.saturation > 0 ? '😄' : 
+                         result.diff.skinAnalysis.improvements.saturation < 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.skinQuality.saturation} → {result.diff.skinAnalysis.after.skinQuality.saturation}
@@ -887,11 +946,16 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌の均一性</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.evenness ? 'text-green-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.evenness ? '改善' : '変化なし'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.evenness ? 'text-green-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.evenness ? '改善' : '変化なし'}
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.evenness ? '😄' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.skinQuality.evenness} → {result.diff.skinAnalysis.after.skinQuality.evenness}
@@ -902,11 +966,16 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌のトーン</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.tone ? 'text-green-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.tone ? '変化' : '変化なし'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.tone ? 'text-green-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.tone ? '変化' : '変化なし'}
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.tone ? '😄' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.skinQuality.tone} → {result.diff.skinAnalysis.after.skinQuality.tone}
@@ -917,12 +986,18 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">シワの見えやすさ</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? 'text-green-600' : 
-                      result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.wrinkleVisibility}%
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? 'text-green-600' : 
+                        result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '+' : ''}{result.diff.skinAnalysis.improvements.wrinkleVisibility}%
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.wrinkleVisibility < 0 ? '😄' : 
+                         result.diff.skinAnalysis.improvements.wrinkleVisibility > 0 ? '😢' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.wrinkleVisibility}% → {result.diff.skinAnalysis.after.wrinkleVisibility}%
@@ -933,11 +1008,16 @@ export default function ComparePage() {
                 <div className="bg-white p-3 rounded-lg shadow-sm border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700">肌年齢印象</span>
-                    <span className={`text-sm font-bold ${
-                      result.diff.skinAnalysis.improvements.estimatedAge ? 'text-green-600' : 'text-gray-600'
-                    }`}>
-                      {result.diff.skinAnalysis.improvements.estimatedAge ? '変化' : '変化なし'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${
+                        result.diff.skinAnalysis.improvements.estimatedAge ? 'text-green-600' : 'text-gray-600'
+                      }`}>
+                        {result.diff.skinAnalysis.improvements.estimatedAge ? '変化' : '変化なし'}
+                      </span>
+                      <span className="text-lg">
+                        {result.diff.skinAnalysis.improvements.estimatedAge ? '😄' : '😐'}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {result.diff.skinAnalysis.before.estimatedAge} → {result.diff.skinAnalysis.after.estimatedAge}
