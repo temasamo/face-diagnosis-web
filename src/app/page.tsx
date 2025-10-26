@@ -1,6 +1,4 @@
 import Image from "next/image";
-import ApiTest from "@/components/ApiTest";
-import VisionTest from "@/components/VisionTest";
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
@@ -13,17 +11,17 @@ export default function Home() {
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <h1 className="text-3xl font-bold text-center">AI顔診断アプリ</h1>
         
-        <div className="w-full space-y-6">
-          <ApiTest />
-          <VisionTest />
+        <div className="text-center text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-lg">高精度な顔診断で、あなたの美しさを数値化</p>
+          <p className="text-sm mt-2">Google Cloud Vision APIと独自アルゴリズムによる精密分析</p>
         </div>
 
-               <div className="flex gap-4 items-center flex-col sm:flex-row">
+        <div className="flex gap-4 items-center flex-col sm:flex-row">
                  <a
                    className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
                    href="/ai/face"
                  >
-                   カメラ撮影診断
+                   📷 カメラ撮影診断
                  </a>
                  <a
                    className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-600 text-white gap-2 hover:bg-blue-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
