@@ -1,15 +1,43 @@
+// 型定義
+interface Position {
+  x: number;
+  y: number;
+}
+
+interface Landmark {
+  type: string;
+  position: Position;
+}
+
+interface VisionData {
+  landmarks?: Landmark[];
+}
+
+interface LandmarkPoints {
+  leftCheek: Position;
+  rightCheek: Position;
+  leftJaw: Position;
+  rightJaw: Position;
+  leftEyeCorner: Position;
+  rightEyeCorner: Position;
+  chin: Position;
+  midEye: Position;
+  leftEar: Position;
+  rightEar: Position;
+}
+
 /**
  * 顔が痩せたスコアを算出
  * @param before Vision APIのランドマーク座標（Before）
  * @param after  Vision APIのランドマーク座標（After）
  * @returns { faceSlimIndex, details }
  */
-export function calculateFaceSlimIndex(before: any, after: any) {
+export function calculateFaceSlimIndex(before: VisionData, after: VisionData) {
   // ===== ユーティリティ関数 =====
-  const distance = (p1: any, p2: any) =>
+  const distance = (p1: Position, p2: Position) =>
     Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 
-  const polygonArea = (points: any[]) => {
+  const polygonArea = (points: Position[]) => {
     let area = 0;
     for (let i = 0; i < points.length; i++) {
       const j = (i + 1) % points.length;
@@ -19,13 +47,13 @@ export function calculateFaceSlimIndex(before: any, after: any) {
   };
 
   // ===== 必要ランドマーク =====
-  const lm = (data: any, key: string) => {
-    const landmark = data.landmarks?.find((l: any) => l.type === key);
+  const lm = (data: VisionData, key: string): Position => {
+    const landmark = data.landmarks?.find((l: Landmark) => l.type === key);
     return landmark?.position || { x: 0, y: 0 };
   };
 
   // 主要ランドマーク取得
-  const b = {
+  const b: LandmarkPoints = {
     leftCheek: lm(before, "LEFT_CHEEK_CENTER") || lm(before, "LEFT_EAR_TRAGION"),
     rightCheek: lm(before, "RIGHT_CHEEK_CENTER") || lm(before, "RIGHT_EAR_TRAGION"),
     leftJaw: lm(before, "CHIN_LEFT_GONION"),
@@ -38,7 +66,7 @@ export function calculateFaceSlimIndex(before: any, after: any) {
     rightEar: lm(before, "RIGHT_EAR_TRAGION"),
   };
 
-  const a = {
+  const a: LandmarkPoints = {
     leftCheek: lm(after, "LEFT_CHEEK_CENTER") || lm(after, "LEFT_EAR_TRAGION"),
     rightCheek: lm(after, "RIGHT_CHEEK_CENTER") || lm(after, "RIGHT_EAR_TRAGION"),
     leftJaw: lm(after, "CHIN_LEFT_GONION"),
