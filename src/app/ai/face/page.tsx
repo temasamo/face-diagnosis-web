@@ -72,7 +72,7 @@ export default function FaceDiagnosisPage() {
 
   return (
     <main className="text-center p-8">
-      <h1 className="text-3xl font-bold mb-6">AI顔診断（Before / After 比較）</h1>
+      <h1 className="text-3xl font-bold mb-6">顔診断AI（Before / After 比較）</h1>
 
       {step !== "compare" && (
         <>

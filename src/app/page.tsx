@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <h1 className="text-3xl font-bold text-center">AI顔診断アプリ</h1>
+        <h1 className="text-3xl font-bold text-center">顔診断AIアプリ</h1>
         
         <div className="text-center text-gray-600 dark:text-gray-400 mb-4">
           <p className="text-lg">高精度な顔診断で、あなたの美しさを数値化</p>
@@ -32,7 +32,7 @@ export default function Home() {
                </div>
       </main>
       <footer className="row-start-3 flex flex-col items-center justify-center text-center text-sm text-gray-500 dark:text-gray-400">
-        <p className="mb-2">© 2024 AI顔診断アプリ - 高精度な顔分析技術</p>
+        <p className="mb-2">© 2024 顔診断AIアプリ - 高精度な顔分析技術</p>
         <p className="text-xs">Powered by Google Cloud Vision API & Next.js</p>
       </footer>
     </div>
