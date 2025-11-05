@@ -128,6 +128,7 @@ export default function ComparePage() {
           before: number;
           after: number;
           change: number;
+          changePercent?: number;
           unit: string;
         };
       };
@@ -262,6 +263,9 @@ export default function ComparePage() {
     setResult(null);
 
     try {
+      // 補正済み画像がある場合はそれを使用、ない場合は元の画像を使用
+      // ただし、/api/compare は内部で自動補正を行うため、補正前の画像を送る
+      // 補正済み画像を送ると二重補正になる可能性があるため、元の画像を送る
       const res = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -814,7 +818,10 @@ export default function ComparePage() {
                         result.diff.measurements.lowerFaceRatio.change < 0 ? 'text-green-600' : 
                         result.diff.measurements.lowerFaceRatio.change > 0 ? 'text-red-600' : 'text-gray-600'
                       }`}>
-                        {result.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}{(result.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
+                        {result.diff.measurements.lowerFaceRatio.change > 0 ? '+' : ''}
+                        {result.diff.measurements.lowerFaceRatio.changePercent !== undefined
+                          ? result.diff.measurements.lowerFaceRatio.changePercent.toFixed(1)
+                          : (result.diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}%
                       </span>
                       <span className="text-lg">
                         {result.diff.measurements.lowerFaceRatio.change < 0 ? '😄' : 

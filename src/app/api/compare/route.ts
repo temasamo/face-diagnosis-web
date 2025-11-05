@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import vision from "@google-cloud/vision";
 import OpenAI from "openai";
+import { alignImage, calculateAlignment } from "@/lib/imageAlignment";
 
 // Google Cloud Vision API クライアント初期化
 const visionClient = new vision.ImageAnnotatorClient({
@@ -53,10 +54,49 @@ export async function POST(req: Request) {
     });
 
 
-    // Vision API呼び出し（Before / After）- 詳細な顔分析を実行
-    console.log("Before画像のVision API呼び出し開始");
-    const [beforeRes] = await visionClient.annotateImage({
+    // 補正前のVision API呼び出し（補正情報取得のため）
+    console.log("補正情報取得のため、Before画像のVision API呼び出し開始");
+    const [beforeResForAlignment] = await visionClient.annotateImage({
       image: { content: clean(before) },
+      features: [
+        { type: 'FACE_DETECTION', maxResults: 1 },
+        { type: 'LANDMARK_DETECTION', maxResults: 1 },
+      ]
+    });
+    console.log("補正情報取得完了");
+
+    // 自動補正: Before画像をAfter画像に合わせて補正
+    let alignedBefore = before;
+    try {
+      const beforeFaceForAlignment = beforeResForAlignment.faceAnnotations?.[0];
+      const [afterResForAlignment] = await visionClient.annotateImage({
+        image: { content: clean(after) },
+        features: [
+          { type: 'FACE_DETECTION', maxResults: 1 },
+          { type: 'LANDMARK_DETECTION', maxResults: 1 },
+        ]
+      });
+      const afterFaceForAlignment = afterResForAlignment.faceAnnotations?.[0];
+
+      if (beforeFaceForAlignment && afterFaceForAlignment) {
+        const alignment = calculateAlignment(beforeFaceForAlignment, afterFaceForAlignment);
+        if (alignment) {
+          console.log("画像補正を実行中...", alignment);
+          alignedBefore = await alignImage(before, after, alignment);
+          console.log("画像補正完了");
+        } else {
+          console.log("補正情報の計算に失敗しましたが、補正なしで続行します");
+        }
+      }
+    } catch (error) {
+      console.error("画像補正エラー（補正なしで続行）:", error);
+      // 補正に失敗しても診断は続行
+    }
+
+    // Vision API呼び出し（補正後のBefore / After）- 詳細な顔分析を実行
+    console.log("補正後のBefore画像のVision API呼び出し開始");
+    const [beforeRes] = await visionClient.annotateImage({
+      image: { content: clean(alignedBefore) },
       features: [
         { type: 'FACE_DETECTION', maxResults: 10 },
         { type: 'LANDMARK_DETECTION', maxResults: 10 },
@@ -64,7 +104,7 @@ export async function POST(req: Request) {
         { type: 'TEXT_DETECTION', maxResults: 1 } // シミやシワのテキスト検出にも対応
       ]
     });
-    console.log("Before画像のVision API呼び出し完了:", beforeRes.faceAnnotations?.length || 0, "個の顔を検出");
+    console.log("補正後のBefore画像のVision API呼び出し完了:", beforeRes.faceAnnotations?.length || 0, "個の顔を検出");
 
     console.log("After画像のVision API呼び出し開始");
     const [afterRes] = await visionClient.annotateImage({
@@ -85,9 +125,9 @@ export async function POST(req: Request) {
       console.error("顔検出失敗:", {
         beforeFaces: beforeFaces.length,
         afterFaces: afterFaces.length,
-        beforeImageSize: clean(before).length,
+        beforeImageSize: clean(alignedBefore).length,
         afterImageSize: clean(after).length,
-        beforeImagePreview: clean(before).substring(0, 50) + "...",
+        beforeImagePreview: clean(alignedBefore).substring(0, 50) + "...",
         afterImagePreview: clean(after).substring(0, 50) + "...",
         beforeResFull: JSON.stringify(beforeRes, null, 2),
         afterResFull: JSON.stringify(afterRes, null, 2)
@@ -98,7 +138,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 差分抽出（美容効果分析用）
+    // 差分抽出（美容効果分析用）- 補正後の画像の結果を使用
     const beforeFace = beforeFaces[0];
     const afterFace = afterFaces[0];
 
@@ -428,7 +468,12 @@ export async function POST(req: Request) {
     const beforeLowerFaceRatio = calculateLowerFaceRatio(beforeFace as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const afterLowerFaceRatio = calculateLowerFaceRatio(afterFace as any);
+    // 比率の差分（絶対値）
     const lowerFaceRatioChange = Math.round((afterLowerFaceRatio - beforeLowerFaceRatio) * 1000) / 1000; // 小数点3桁まで
+    // パーセンテージ変化率（相対値）
+    const lowerFaceRatioChangePercent = beforeLowerFaceRatio > 0 
+      ? ((afterLowerFaceRatio - beforeLowerFaceRatio) / beforeLowerFaceRatio) * 100 
+      : 0;
 
     // フェイスリフト指数の計算（内部スコア）
     const faceLiftIndex = (faceLiftAngleChange * 0.6) + ((-lowerFaceRatioChange * 100) * 0.4);
@@ -485,6 +530,7 @@ export async function POST(req: Request) {
           before: beforeLowerFaceRatio,
           after: afterLowerFaceRatio,
           change: lowerFaceRatioChange,
+          changePercent: Math.round(lowerFaceRatioChangePercent * 10) / 10, // パーセンテージ変化率（小数点1桁）
           unit: "比率"
         }
       },
@@ -559,7 +605,8 @@ export async function POST(req: Request) {
     }
     // 新指標: 下顔面比率
     if (diff.measurements.lowerFaceRatio.change !== 0) {
-      significantChanges.push(`下顔面比率: ${(diff.measurements.lowerFaceRatio.change * 100).toFixed(1)}% ${diff.measurements.lowerFaceRatio.change < 0 ? 'リフトアップ' : 'たるみ'}`);
+      const changePercent = diff.measurements.lowerFaceRatio.changePercent ?? (diff.measurements.lowerFaceRatio.change * 100);
+      significantChanges.push(`下顔面比率: ${changePercent.toFixed(1)}% ${diff.measurements.lowerFaceRatio.change < 0 ? 'リフトアップ' : 'たるみ'}`);
     }
 
     // 表情変化の確認（内面的な自信や精神状態の反映）

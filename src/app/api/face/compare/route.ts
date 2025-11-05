@@ -1,20 +1,129 @@
 // src/app/api/face/compare/route.ts
 import { NextResponse } from "next/server";
+import vision from "@google-cloud/vision";
+import { alignImage, calculateAlignment } from "@/lib/imageAlignment";
+
+// Google Cloud Vision API クライアント初期化
+const visionClient = new vision.ImageAnnotatorClient({
+  projectId: "lunar-planet-475206",
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  },
+});
 
 type Point = { x: number; y: number };
 type Landmarks = Record<string, Point>;
-type FaceRequest = { before: Landmarks; after: Landmarks };
+type FaceRequest = { before: string; after: string }; // 画像（base64）を受け取る
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+      return NextResponse.json(
+        { error: "Google Cloud認証情報が設定されていません。" },
+        { status: 500 }
+      );
+    }
+
     const body = (await req.json()) as FaceRequest;
     const { before, after } = body;
     if (!before || !after) {
       return NextResponse.json(
-        { error: "before / after のランドマーク情報が不足しています。" },
+        { error: "before / after の画像情報が不足しています。" },
         { status: 400 }
       );
     }
+
+    // Base64データからdata:image/...の部分を除去
+    const clean = (img: string) => img.replace(/^data:image\/\w+;base64,/, "");
+
+    // 補正前のVision API呼び出し（補正情報取得のため）
+    console.log("たるみ診断: 補正情報取得のため、Before/After画像のVision API呼び出し開始");
+    const [beforeResForAlignment] = await visionClient.annotateImage({
+      image: { content: clean(before) },
+      features: [
+        { type: "FACE_DETECTION", maxResults: 1 },
+        { type: "LANDMARK_DETECTION", maxResults: 1 },
+      ],
+    });
+    const [afterResForAlignment] = await visionClient.annotateImage({
+      image: { content: clean(after) },
+      features: [
+        { type: "FACE_DETECTION", maxResults: 1 },
+        { type: "LANDMARK_DETECTION", maxResults: 1 },
+      ],
+    });
+
+    const beforeFaceForAlignment = beforeResForAlignment.faceAnnotations?.[0];
+    const afterFaceForAlignment = afterResForAlignment.faceAnnotations?.[0];
+
+    if (!beforeFaceForAlignment || !afterFaceForAlignment) {
+      return NextResponse.json(
+        { error: "顔を検出できませんでした。" },
+        { status: 400 }
+      );
+    }
+
+    // 自動補正: Before画像をAfter画像に合わせて補正
+    let alignedBefore = before;
+    try {
+      const alignment = calculateAlignment(beforeFaceForAlignment, afterFaceForAlignment);
+      if (alignment) {
+        console.log("たるみ診断: 画像補正を実行中...", alignment);
+        alignedBefore = await alignImage(before, after, alignment);
+        console.log("たるみ診断: 画像補正完了");
+      } else {
+        console.log("たるみ診断: 補正情報の計算に失敗しましたが、補正なしで続行します");
+      }
+    } catch (error) {
+      console.error("たるみ診断: 画像補正エラー（補正なしで続行）:", error);
+      // 補正に失敗しても診断は続行
+    }
+
+    // 補正後の画像からランドマークを取得
+    console.log("たるみ診断: 補正後の画像からランドマーク取得開始");
+    const [beforeRes] = await visionClient.annotateImage({
+      image: { content: clean(alignedBefore) },
+      features: [
+        { type: "FACE_DETECTION", maxResults: 1 },
+        { type: "LANDMARK_DETECTION", maxResults: 1 },
+      ],
+    });
+    const [afterRes] = await visionClient.annotateImage({
+      image: { content: clean(after) },
+      features: [
+        { type: "FACE_DETECTION", maxResults: 1 },
+        { type: "LANDMARK_DETECTION", maxResults: 1 },
+      ],
+    });
+
+    const beforeFace = beforeRes.faceAnnotations?.[0];
+    const afterFace = afterRes.faceAnnotations?.[0];
+
+    if (!beforeFace || !afterFace || !beforeFace.landmarks || !afterFace.landmarks) {
+      return NextResponse.json(
+        { error: "ランドマークの取得に失敗しました。" },
+        { status: 400 }
+      );
+    }
+
+    // Vision APIのランドマーク形式を変換
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const convertLandmarks = (landmarks: any[]): Landmarks => {
+      const landmarksMap: Landmarks = {};
+      landmarks.forEach((landmark) => {
+        if (landmark.type && landmark.position) {
+          landmarksMap[String(landmark.type)] = {
+            x: landmark.position.x || 0,
+            y: landmark.position.y || 0,
+          };
+        }
+      });
+      return landmarksMap;
+    };
+
+    const beforeLandmarks = convertLandmarks(beforeFace.landmarks);
+    const afterLandmarks = convertLandmarks(afterFace.landmarks);
 
     const normalize = (lm: Landmarks) => {
       const L = lm.LEFT_EYE;
@@ -34,8 +143,8 @@ export async function POST(req: Request) {
       return norm;
     };
 
-    const beforeNorm = normalize(before);
-    const afterNorm = normalize(after);
+    const beforeNorm = normalize(beforeLandmarks);
+    const afterNorm = normalize(afterLandmarks);
 
     const metrics = (lm: Landmarks) => {
       const deg = (r: number) => (r * 180) / Math.PI;
@@ -73,10 +182,14 @@ export async function POST(req: Request) {
       before: beforeMetrics,
       after: afterMetrics,
       delta: {
-        ΔCDI: afterMetrics.CDI - beforeMetrics.CDI,
+        ΔMCD: afterMetrics.MCD - beforeMetrics.MCD,
         ΔJLA: afterMetrics.JLA - beforeMetrics.JLA,
+        ΔCDI: afterMetrics.CDI - beforeMetrics.CDI,
+        ΔJWR: afterMetrics.JWR - beforeMetrics.JWR,
         改善率_CDI: ratio("CDI"),
         改善率_JLA: ratio("JLA"),
+        改善率_MCD: ratio("MCD"),
+        改善率_JWR: ratio("JWR"),
       },
       score: (() => {
         const s = 50 + 0.6 * ratio("CDI") + 0.4 * ratio("JLA");
