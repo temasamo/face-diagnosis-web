@@ -12,10 +12,40 @@ import { FaceSaggingResult } from "@/components/FaceSaggingResult";
  * - 同一画像・ランドマークデータを用いて診断を切替
  * - 各診断APIは独立（/api/compare, /api/face/compare）
  */
+// 型定義
+type FaceDiagnosisResult = {
+  success: boolean;
+  diff?: {
+    measurements?: {
+      faceWidth?: { before: number; after: number; change: number; unit: string };
+      faceHeight?: { before: number; after: number; change: number; unit: string };
+      eyeDistance?: { before: number; after: number; change: number; unit: string };
+      lowerFaceRatio?: { before: number; after: number; change: number; changePercent?: number; unit: string };
+    };
+  };
+  message?: string;
+};
+
+type FaceSaggingResult = {
+  before: { MCD: number; JLA: number; CDI: number; CDI_L: number; CDI_R: number; JWR: number };
+  after: { MCD: number; JLA: number; CDI: number; CDI_L: number; CDI_R: number; JWR: number };
+  delta: {
+    ΔMCD: number;
+    ΔJLA: number;
+    ΔCDI: number;
+    ΔJWR: number;
+    改善率_CDI: number;
+    改善率_JLA: number;
+    改善率_MCD?: number;
+    改善率_JWR?: number;
+  };
+  score: number;
+};
+
 export default function FaceDiagnosisPage() {
   const [loading, setLoading] = useState(false);
-  const [faceResult, setFaceResult] = useState<any>(null);
-  const [saggingResult, setSaggingResult] = useState<any>(null);
+  const [faceResult, setFaceResult] = useState<FaceDiagnosisResult | null>(null);
+  const [saggingResult, setSaggingResult] = useState<FaceSaggingResult | null>(null);
   const { landmarks, images, uploadImage, loading: landmarksLoading } =
     useLandmarks();
 

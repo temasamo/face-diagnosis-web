@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

@@ -79,9 +79,10 @@ export async function alignImage(
 /**
  * Vision APIの顔検出結果から補正情報を計算
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function calculateAlignment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   beforeFace: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   afterFace: any
 ): {
   offsetX: number;
@@ -93,11 +94,17 @@ export function calculateAlignment(
     // 座標抽出関数
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getCenter = (f: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const left = f.landmarks?.find((l: any) => l.type === "LEFT_EYE")?.position;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const right = f.landmarks?.find((l: any) => l.type === "RIGHT_EYE")?.position;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const nose = f.landmarks?.find((l: any) => l.type === "NOSE_TIP")?.position;
 
-      if (!left || !right || !nose) return null;
+      if (!left || !right || !nose || left.x === undefined || left.y === undefined || 
+          right.x === undefined || right.y === undefined || nose.x === undefined || nose.y === undefined) {
+        return null;
+      }
       const eyeCenter = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
       return { x: (eyeCenter.x + nose.x) / 2, y: (eyeCenter.y + nose.y) / 2 };
     };
@@ -105,11 +112,17 @@ export function calculateAlignment(
     // 顔のサイズ計算（目から顎までの距離）
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getFaceSize = (f: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const left = f.landmarks?.find((l: any) => l.type === "LEFT_EYE")?.position;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const right = f.landmarks?.find((l: any) => l.type === "RIGHT_EYE")?.position;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const chin = f.landmarks?.find((l: any) => l.type === "CHIN_GNATHION")?.position;
 
-      if (!left || !right || !chin) return null;
+      if (!left || !right || !chin || left.x === undefined || left.y === undefined ||
+          right.x === undefined || right.y === undefined || chin.x === undefined || chin.y === undefined) {
+        return null;
+      }
       const eyeCenter = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
       return Math.sqrt(Math.pow(chin.x - eyeCenter.x, 2) + Math.pow(chin.y - eyeCenter.y, 2));
     };
