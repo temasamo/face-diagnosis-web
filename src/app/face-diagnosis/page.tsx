@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -152,6 +152,19 @@ export default function FaceDiagnosisPage() {
       scale: number;
     };
   } | null>(null);
+  
+  // 画面サイズに応じた表示名の管理（mdブレークポイント = 768px）
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // mdブレークポイント
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 顔診断（汎用）- base64画像を送信
   async function handleFaceDiagnosis() {
@@ -372,7 +385,7 @@ export default function FaceDiagnosisPage() {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              ↔️ 横並び比較
+              {isMobile ? "↕️ 縦並び比較" : "↔️ 横並び比較"}
             </button>
           </div>
 
@@ -486,7 +499,9 @@ export default function FaceDiagnosisPage() {
                 ? "✨ 顔の位置・角度・サイズが自動補正されました！微妙な変化がより見やすくなっています。"
                 : "💡 スライダーでBefore画像の透明度を調整して、変化を確認できます"
             ) : (
-              "💡 横並び比較でBefore/Afterの違いを並べて確認できます"
+              isMobile 
+                ? "💡 縦並び比較でBefore/Afterの違いを並べて確認できます"
+                : "💡 横並び比較でBefore/Afterの違いを並べて確認できます"
             )}
           </p>
 
