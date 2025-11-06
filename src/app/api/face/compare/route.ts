@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     }
 
     // 自動補正: Before画像をAfter画像に合わせて補正
+    // 補正処理は決定論的（同じ入力画像なら同じ補正後の画像）なので一貫性が保たれる
     let alignedBefore = before;
     try {
       const alignment = calculateAlignment(beforeFaceForAlignment, afterFaceForAlignment);
@@ -80,7 +81,9 @@ export async function POST(req: Request) {
       // 補正に失敗しても診断は続行
     }
 
-    // 補正後の画像からランドマークを取得
+    // 補正後の画像からランドマークを取得（撮影条件の違いを補正した状態で測定）
+    // 補正後の画像は決定論的だが、Vision APIの結果には若干の揺らぎがある可能性がある
+    // これはAPIの制約として受け入れる必要がある
     console.log("たるみ診断: 補正後の画像からランドマーク取得開始");
     const [beforeRes] = await visionClient.annotateImage({
       image: { content: clean(alignedBefore) },
@@ -146,6 +149,97 @@ export async function POST(req: Request) {
     const beforeNorm = normalize(beforeLandmarks);
     const afterNorm = normalize(afterLandmarks);
 
+    // 同一人物かどうかを判定する関数
+    const checkSamePerson = (beforeLm: Landmarks, afterLm: Landmarks): { isSamePerson: boolean; confidence: number; warning?: string } => {
+      // 重要なランドマークポイントを比較
+      const keyLandmarks = [
+        'NOSE_TIP',
+        'MOUTH_CENTER',
+        'CHIN_GNATHION',
+        'LEFT_EYE',
+        'RIGHT_EYE',
+        'LEFT_EAR_TRAGION',
+        'RIGHT_EAR_TRAGION',
+        'CHIN_LEFT_GONION',
+        'CHIN_RIGHT_GONION',
+        'FOREHEAD_GLABELLA',
+      ];
+
+      let totalDistance = 0;
+      let validPoints = 0;
+
+      for (const key of keyLandmarks) {
+        if (beforeLm[key] && afterLm[key]) {
+          const dist = Math.hypot(
+            afterLm[key].x - beforeLm[key].x,
+            afterLm[key].y - beforeLm[key].y
+          );
+          totalDistance += dist;
+          validPoints++;
+        }
+      }
+
+      if (validPoints === 0) {
+        return { isSamePerson: true, confidence: 0.5 }; // 判定不可の場合は警告なし
+      }
+
+      const avgDistance = totalDistance / validPoints;
+
+      // 顔の特徴的な比率を比較
+      const getFaceRatios = (lm: Landmarks) => {
+        const eyeDistance = Math.hypot(
+          lm.RIGHT_EYE.x - lm.LEFT_EYE.x,
+          lm.RIGHT_EYE.y - lm.LEFT_EYE.y
+        );
+        const faceWidth = Math.abs(lm.RIGHT_EAR_TRAGION.x - lm.LEFT_EAR_TRAGION.x);
+        const faceHeight = Math.abs(lm.CHIN_GNATHION.y - (lm.FOREHEAD_GLABELLA?.y || lm.LEFT_EYE.y));
+        const noseToMouth = Math.hypot(
+          lm.MOUTH_CENTER.x - lm.NOSE_TIP.x,
+          lm.MOUTH_CENTER.y - lm.NOSE_TIP.y
+        );
+
+        return {
+          eyeDistance,
+          faceWidth,
+          faceHeight,
+          faceAspectRatio: faceWidth / (faceHeight || 1),
+          eyeToFaceRatio: eyeDistance / (faceWidth || 1),
+          noseToMouth,
+        };
+      };
+
+      const beforeRatios = getFaceRatios(beforeLm);
+      const afterRatios = getFaceRatios(afterLm);
+
+      // 比率の差異を計算
+      const ratioDifferences = {
+        faceAspectRatio: Math.abs(beforeRatios.faceAspectRatio - afterRatios.faceAspectRatio),
+        eyeToFaceRatio: Math.abs(beforeRatios.eyeToFaceRatio - afterRatios.eyeToFaceRatio),
+        noseToMouth: Math.abs(beforeRatios.noseToMouth - afterRatios.noseToMouth) / (beforeRatios.noseToMouth || 1),
+      };
+
+      const avgRatioDiff = (ratioDifferences.faceAspectRatio + ratioDifferences.eyeToFaceRatio + ratioDifferences.noseToMouth) / 3;
+
+      // 閾値: 正規化された距離が0.15以上、または比率の差異が0.2以上の場合、別人の可能性が高い
+      const distanceThreshold = 0.15;
+      const ratioThreshold = 0.2;
+
+      const isSamePerson = avgDistance < distanceThreshold && avgRatioDiff < ratioThreshold;
+      const confidence = Math.max(0, Math.min(1, 1 - (avgDistance / distanceThreshold) - (avgRatioDiff / ratioThreshold)));
+
+      if (!isSamePerson) {
+        return {
+          isSamePerson: false,
+          confidence,
+          warning: 'BeforeとAfterの写真が別人ではないですか？顔の特徴が大きく異なるように見受けられます。',
+        };
+      }
+
+      return { isSamePerson: true, confidence };
+    };
+
+    const personCheck = checkSamePerson(beforeNorm, afterNorm);
+
     const metrics = (lm: Landmarks) => {
       const deg = (r: number) => (r * 180) / Math.PI;
       const angle = (a: Point, b: Point) => deg(Math.atan2(b.y - a.y, b.x - a.x));
@@ -195,6 +289,11 @@ export async function POST(req: Request) {
         const s = 50 + 0.6 * ratio("CDI") + 0.4 * ratio("JLA");
         return Math.round(Math.min(100, Math.max(0, s)));
       })(),
+      personCheck: {
+        isSamePerson: personCheck.isSamePerson,
+        confidence: personCheck.confidence,
+        warning: personCheck.warning,
+      },
     };
 
     return NextResponse.json(result, { status: 200 });

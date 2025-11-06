@@ -117,6 +117,11 @@ type FaceSaggingResult = {
     改善率_JWR?: number;
   };
   score: number;
+  personCheck?: {
+    isSamePerson: boolean;
+    confidence: number;
+    warning?: string;
+  };
 };
 
 export default function FaceDiagnosisPage() {
