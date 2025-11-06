@@ -126,6 +126,8 @@ export default function FaceDiagnosisPage() {
       setAlignmentData(alignData);
       
       // 2. CanvasでBefore画像を補正
+      if (!images.before || !images.after) return;
+      
       const beforeImg = new window.Image();
       const afterImg = new window.Image();
       
@@ -133,9 +135,9 @@ export default function FaceDiagnosisPage() {
       await new Promise<void>((resolve) => {
         beforeImg.onload = () => {
           afterImg.onload = () => resolve();
-          afterImg.src = images.after;
+          afterImg.src = images.after!;
         };
-        beforeImg.src = images.before;
+        beforeImg.src = images.before!;
       });
       
       const canvas = document.createElement("canvas");
