@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { SaggingRadarChart } from "./SaggingRadarChart";
 
 interface FaceSaggingResultProps {
   data: {
@@ -479,6 +480,33 @@ export function FaceSaggingResult({ data }: FaceSaggingResultProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* レーダーチャート（主要指標の可視化） */}
+      <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+        <h3 className="font-bold text-blue-800 mb-3 text-center">📊 主要指標の可視化</h3>
+        <SaggingRadarChart
+          data={{
+            before: {
+              MCD: data.before.MCD,
+              JLA: data.before.JLA,
+              CDI: data.before.CDI,
+              JWR: data.before.JWR,
+            },
+            after: {
+              MCD: data.after.MCD,
+              JLA: data.after.JLA,
+              CDI: data.after.CDI,
+              JWR: data.after.JWR,
+            },
+            delta: {
+              改善率_CDI: data.delta.改善率_CDI,
+              改善率_JLA: data.delta.改善率_JLA,
+              改善率_MCD: data.delta.改善率_MCD,
+              改善率_JWR: data.delta.改善率_JWR,
+            },
+          }}
+        />
       </div>
 
       {/* 左右差の詳細 */}

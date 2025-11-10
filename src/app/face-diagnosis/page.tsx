@@ -6,6 +6,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useLandmarks } from "@/components/useLandmarks";
 import { FaceSaggingResult } from "@/components/FaceSaggingResult";
+import { RadarChart } from "@/components/RadarChart";
+import { SkinRadarChart } from "@/components/SkinRadarChart";
 
 /**
  * 顔診断＋たるみ診断 共通ページ
@@ -855,6 +857,41 @@ export default function FaceDiagnosisPage() {
                   </div>
                 )}
 
+                {/* レーダーチャート（精密数値測定結果の可視化） */}
+                {faceResult.diff?.measurements && (
+                  <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                    <h3 className="font-bold text-indigo-800 mb-3 text-center">📊 精密数値測定結果の可視化</h3>
+                    <RadarChart
+                      measurements={{
+                        faceWidth: {
+                          before: faceResult.diff.measurements.faceWidth.before,
+                          after: faceResult.diff.measurements.faceWidth.after,
+                        },
+                        faceHeight: {
+                          before: faceResult.diff.measurements.faceHeight.before,
+                          after: faceResult.diff.measurements.faceHeight.after,
+                        },
+                        eyeDistance: {
+                          before: faceResult.diff.measurements.eyeDistance.before,
+                          after: faceResult.diff.measurements.eyeDistance.after,
+                        },
+                        eyebrowToEyeDistance: {
+                          before: faceResult.diff.measurements.eyebrowToEyeDistance.before,
+                          after: faceResult.diff.measurements.eyebrowToEyeDistance.after,
+                        },
+                        faceLiftAngle: {
+                          before: faceResult.diff.measurements.faceLiftAngle.before,
+                          after: faceResult.diff.measurements.faceLiftAngle.after,
+                        },
+                        lowerFaceRatio: {
+                          before: faceResult.diff.measurements.lowerFaceRatio.before,
+                          after: faceResult.diff.measurements.lowerFaceRatio.after,
+                        },
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* 肌の状態分析結果 */}
                 {faceResult.diff?.skinAnalysis && (
                   <div className="mt-6 bg-gradient-to-r from-pink-50 to-rose-50 p-4 rounded-lg border border-pink-200">
@@ -987,6 +1024,14 @@ export default function FaceDiagnosisPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* レーダーチャート（肌の状態分析結果の可視化） */}
+                {faceResult.diff?.skinAnalysis && (
+                  <div className="mt-6 bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-lg border border-rose-200">
+                    <h3 className="font-bold text-rose-800 mb-3 text-center">📊 肌の状態分析結果の可視化</h3>
+                    <SkinRadarChart skinAnalysis={faceResult.diff.skinAnalysis} />
                   </div>
                 )}
 
