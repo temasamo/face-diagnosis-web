@@ -47,69 +47,56 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
     return 0;
   };
 
-  // 各項目の最大値と最小値を計算（全項目を通して）
-  const getAllValues = () => {
-    const allValues: number[] = [];
-    labels.forEach((_, index) => {
-      allValues.push(getValue(index, true)); // Before
-      allValues.push(getValue(index, false)); // After
-    });
-    return allValues;
-  };
-
-  const allValues = getAllValues();
-  const globalMin = Math.min(...allValues);
-  const globalMax = Math.max(...allValues);
-  const globalRange = globalMax - globalMin;
-
-  // 値を0-100%の範囲に正規化（各項目ごとに独立して正規化）
-  const normalizeToPercent = (value: number, index: number): number => {
-    // 各項目の最大値と最小値を計算
-    const beforeValue = getValue(index, true);
-    const afterValue = getValue(index, false);
-    const itemMin = Math.min(beforeValue, afterValue);
-    const itemMax = Math.max(beforeValue, afterValue);
-    const itemRange = itemMax - itemMin;
-
-    if (itemRange === 0) {
-      // 変化がない場合は50%に設定
-      return 50;
+  // 改善率を取得
+  const getImprovementRate = (index: number): number => {
+    const key = labels[index];
+    if (key === "CDI") {
+      return data.delta.改善率_CDI || 0;
     }
-
-    // 値を0-100%の範囲に正規化
-    // 注意: これらの指標は「減少が改善」なので、値が小さいほど良い
-    // レーダーチャートでは外側が良いので、値が小さいほど外側に表示
-    const normalized = ((itemMax - value) / itemRange) * 100;
-    return Math.max(0, Math.min(100, normalized));
+    if (key === "JLA") {
+      return data.delta.改善率_JLA || 0;
+    }
+    if (key === "MCD") {
+      return data.delta.改善率_MCD || 0;
+    }
+    if (key === "JWR") {
+      return data.delta.改善率_JWR || 0;
+    }
+    return 0;
   };
 
   // Beforeを基準（100%）として、Afterの変化率を計算
-  // 各項目の値をパーセンテージで正規化して表示
-  const getNormalizedValue = (before: number, after: number, isBefore: boolean, index: number) => {
+  const getNormalizedValue = (index: number, isBefore: boolean): number => {
     if (isBefore) {
       // Beforeは常に100%（基準線）
       return 100;
     } else {
       // AfterはBeforeに対する変化率（%）
+      const before = getValue(index, true);
+      const after = getValue(index, false);
+      
       if (before === 0) return 100; // ゼロ除算を防ぐ
       
-      // BeforeとAfterの値を正規化
-      const beforeNormalized = normalizeToPercent(before, index);
-      const afterNormalized = normalizeToPercent(after, index);
-      
       // Beforeを100%として、Afterの変化率を計算
-      if (beforeNormalized === 0) return 100; // ゼロ除算を防ぐ
-      const changePercent = (afterNormalized / beforeNormalized) * 100;
+      const changePercent = (after / before) * 100;
       
-      // 改善している場合（値が減った = afterNormalized > beforeNormalized）は外側に表示
-      if (afterNormalized > beforeNormalized) {
-        // 改善している場合: 100%以上に設定
-        return Math.min(150, 100 + (afterNormalized - beforeNormalized) * 2);
-      } else if (afterNormalized < beforeNormalized) {
-        // 悪化している場合: 100%未満に設定
-        return Math.max(50, changePercent);
+      // 改善率を取得（正の値 = 改善、負の値 = 悪化）
+      const improvementRate = getImprovementRate(index);
+      
+      // 改善している場合（改善率が正 = 値が減った = 改善）は外側に表示
+      if (improvementRate > 0) {
+        // 改善している場合: 100%を超えて表示（最大150%まで）
+        // 改善率に応じて外側に表示（改善率が大きいほど外側）
+        return Math.min(150, 100 + improvementRate * 0.5);
+      } else if (improvementRate < 0) {
+        // 悪化している場合: 100%未満に表示（最小50%まで）
+        // 改善率が負の場合、値が増えているので悪化
+        // changePercentは100%を超えるが、内側に表示するために100%から悪化分を引く
+        const deteriorationRate = Math.abs(improvementRate); // 悪化率（絶対値）
+        const displayPercent = 100 - deteriorationRate * 0.5; // 悪化率に応じて内側に表示
+        return Math.max(50, displayPercent);
       } else {
-        // 変化なし
+        // 変化なし: 100%
         return 100;
       }
     }
@@ -121,11 +108,12 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
   const centerY = 200;
   const radius = 150;
 
-  // 各頂点の座標を計算（変化率を0-100%の範囲にマッピング）
+  // 各頂点の座標を計算（変化率を0-150%の範囲にマッピング）
   const getPoint = (index: number, normalizedPercent: number) => {
     const angle = (index * angleStep) - (Math.PI / 2); // 上から開始
-    // 変化率を半径にマッピング（100%が最大半径、0%が中心、150%も最大半径）
-    const r = Math.min(1, normalizedPercent / 100) * radius;
+    // 変化率を半径にマッピング（100%が基準半径、150%が最大半径、0%が中心）
+    // 100%を超える場合は外側に表示
+    const r = Math.min(1.5, normalizedPercent / 100) * radius;
     return {
       x: centerX + r * Math.cos(angle),
       y: centerY + r * Math.sin(angle),
@@ -137,10 +125,7 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
     const points: { x: number; y: number }[] = [];
 
     labels.forEach((_, index) => {
-      const before = getValue(index, true);
-      const after = getValue(index, false);
-      
-      const normalizedPercent = getNormalizedValue(before, after, isBefore, index);
+      const normalizedPercent = getNormalizedValue(index, isBefore);
       const point = getPoint(index, normalizedPercent);
       points.push(point);
     });
@@ -156,8 +141,8 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
   const beforePath = createPath(true);
   const afterPath = createPath(false);
 
-  // グリッド線（同心円）を描画（0%, 25%, 50%, 75%, 100%）
-  const gridLines = [0, 0.25, 0.5, 0.75, 1.0].map((scale) => {
+  // グリッド線（同心円）を描画（0%, 25%, 50%, 75%, 100%, 125%, 150%）
+  const gridLines = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5].map((scale) => {
     const points: { x: number; y: number }[] = [];
     for (let i = 0; i < 4; i++) {
       const angle = i * angleStep - Math.PI / 2;
@@ -174,25 +159,27 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
 
     // 100%の基準線を強調表示
     const isBaseLine = scale === 1.0;
+    // 150%の最大線も少し強調
+    const isMaxLine = scale === 1.5;
 
     return (
       <path
         key={scale}
         d={path}
         fill="none"
-        stroke={isBaseLine ? "#9ca3af" : "#e5e7eb"}
-        strokeWidth={isBaseLine ? 2 : 1}
-        opacity={isBaseLine ? 0.7 : 0.5}
+        stroke={isBaseLine ? "#9ca3af" : isMaxLine ? "#cbd5e1" : "#e5e7eb"}
+        strokeWidth={isBaseLine ? 2 : isMaxLine ? 1.5 : 1}
+        opacity={isBaseLine ? 0.7 : isMaxLine ? 0.6 : 0.5}
         strokeDasharray={isBaseLine ? "3,3" : "none"}
       />
     );
   });
 
-  // 軸線を描画
+  // 軸線を描画（150%まで延長）
   const axes = labels.map((_, index) => {
     const angle = index * angleStep - Math.PI / 2;
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
+    const x = centerX + radius * 1.5 * Math.cos(angle);
+    const y = centerY + radius * 1.5 * Math.sin(angle);
     return (
       <line
         key={index}
@@ -301,7 +288,7 @@ export function SaggingRadarChart({ data }: SaggingRadarChartProps) {
           </div>
         </div>
         <p className="text-xs text-gray-500 text-center mt-2">
-          ※ Beforeを100%として、Afterの変化率を表示しています。改善している項目は外側に表示されます。
+          ※ Beforeを100%（基準線）として、Afterの変化率を表示しています。改善している項目は100%を超えて外側に表示されます（最大150%まで）。
         </p>
       </div>
     </div>
